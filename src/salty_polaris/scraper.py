@@ -12,6 +12,10 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
+import json
+import os
+import time
+
 logger = logging.getLogger(__name__)
 
 VESSELS_FINDER_BASE_URL = "https://www.vesselfinder.com"
@@ -29,7 +33,6 @@ DEFAULT_HEADERS = {
 }
 
 REQUEST_TIMEOUT = 30
-
 
 @dataclass
 class VesselRecord:
@@ -50,6 +53,7 @@ class VesselRecord:
         )
 
 
+
 class VesselFinderScraper:
     """Scrapes ships in port from VesselFinder port pages.
 
@@ -60,6 +64,18 @@ class VesselFinderScraper:
         for v in vessels:
             print(v.name, v.arrival)
     """
+
+    def fetch_section_urls(self, html: str) -> dict:
+        """Find URLs for #expected, #arrivals, #departures, #in-port sections on the port page."""
+        soup = BeautifulSoup(html, "lxml")
+        fragments = ["#expected", "#arrivals", "#departures", "#in-port"]
+        section_urls = {}
+        for frag in fragments:
+            anchor = soup.find("a", href=lambda h: h and frag in h)
+            if anchor and anchor["href"]:
+                url = urljoin(self.url, anchor["href"])
+                section_urls[frag] = url
+        return section_urls
 
     def __init__(
         self,
@@ -151,25 +167,37 @@ def _parse_vessels(soup: BeautifulSoup) -> List[VesselRecord]:
     tbody = table.find("tbody")
     rows = tbody.find_all("tr") if tbody else table.find_all("tr")
 
-    for row in rows:
+
+    for i, row in enumerate(rows):
         cells = row.find_all("td")
         if not cells:
             continue  # header row or empty row
 
-        # --- column 0: vessel name -----------------------------------------------
-        name_cell = cells[0]
-        name_anchor = name_cell.find("a")
-        name = (
-            name_anchor.get_text(strip=True)
-            if name_anchor
-            else name_cell.get_text(strip=True)
-        )
+        if i == 0:
+            print("DEBUG: First row cell values:", [c.get_text(strip=True) for c in cells])
+
+        # --- column 1: vessel name and type --------------------------------------
+
+        name_cell = cells[1]
+        name_anchor = name_cell.find("a", class_="named-item", href=True)
+        if name_anchor:
+            inner = name_anchor.find("div", class_="named-item-inner")
+            if inner:
+                div_title = inner.find("div", class_="named-title")
+                div_subtitle = inner.find("div", class_="named-subtitle")
+                name = div_title.get_text(strip=True) if div_title else None
+                vessel_type = div_subtitle.get_text(strip=True).lower() if div_subtitle else None
+            else:
+                name = name_anchor.get_text(strip=True)
+                vessel_type = None
+            vessel_url = urljoin(VESSELS_FINDER_BASE_URL, name_anchor["href"])
+        else:
+            name = name_cell.get_text(strip=True)
+            vessel_url = None
+            vessel_type = None
+
         if not name:
             continue
-
-        vessel_url: Optional[str] = None
-        if name_anchor and name_anchor.get("href"):
-            vessel_url = urljoin(VESSELS_FINDER_BASE_URL, name_anchor["href"])
 
         # --- helper: safe cell text -----------------------------------------------
         def cell_text(index: int) -> Optional[str]:
@@ -182,12 +210,66 @@ def _parse_vessels(soup: BeautifulSoup) -> List[VesselRecord]:
             VesselRecord(
                 name=name,
                 vessel_url=vessel_url,
-                vessel_type=cell_text(1),
+                vessel_type=vessel_type,
                 flag=cell_text(2),
-                length=cell_text(3),
-                arrival=cell_text(4),
+                length=cell_text(7),
+                arrival=cell_text(0),
                 departure=cell_text(5),
             )
         )
 
+
     return vessels
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    port_code = DEFAULT_PORT_CODE
+    print(f"Scraping vessels in port: {port_code}")
+    scraper = VesselFinderScraper(port_code)
+    html = scraper.fetch()
+    vessels = scraper.parse(html)
+
+
+    # Helper to convert VesselRecord to dict
+    def vessel_to_dict(v):
+        return {
+            "name": v.name,
+            "vessel_url": v.vessel_url,
+            "vessel_type": v.vessel_type,
+            "flag": v.flag,
+            "length": v.length,
+            "arrival": v.arrival,
+            "departure": v.departure,
+        }
+
+    def make_json_preamble(port_code, url, vessels):
+        return {
+            "timestamp": int(time.time()),
+            "port_code": port_code,
+            "url": url,
+            "vessels": [vessel_to_dict(v) for v in vessels],
+        }
+
+    timestamp = int(time.time())
+    main_json_path = f"/tmp/{port_code}-main-{timestamp}.json"
+    with open(main_json_path, "w") as f:
+        json.dump(make_json_preamble(port_code, scraper.url, vessels), f, indent=2)
+    print(f"Wrote main port vessels to {main_json_path}")
+
+    # Find and visit each section URL
+    section_urls = scraper.fetch_section_urls(html)
+    for frag, url in section_urls.items():
+        section_name = frag.lstrip('#').replace('-', '_')
+        timestamp = int(time.time())
+        json_path = f"/tmp/{port_code}-{section_name}-{timestamp}.json"
+        print(f"Scraping section {frag} ({url}) ...")
+        try:
+            resp = requests.get(url, headers=scraper.headers, timeout=scraper.timeout)
+            resp.raise_for_status()
+            vessels = scraper.parse(resp.text)
+            with open(json_path, "w") as f:
+                json.dump(make_json_preamble(port_code, url, vessels), f, indent=2)
+            print(f"Wrote {section_name} vessels to {json_path}")
+        except Exception as e:
+            print(f"Failed to fetch {url}: {e}")
