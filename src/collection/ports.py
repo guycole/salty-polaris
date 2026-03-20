@@ -174,10 +174,10 @@ class PortScraper:
 
     def json_preamble(self) -> dict:
         return {
-            "application": "portScraper1",
+            "application": "polaris-ports-v1",
             "portCode": self.port,
             "schemaVersion": 1,
-            "timestamp": self.time_stamp,
+            "timeStampEpoch": self.time_stamp,
             "url": self.url,
             "vessels": []
         }

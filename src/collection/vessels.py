@@ -92,10 +92,10 @@ class VesselScraper:
 
     def json_preamble(self) -> dict:
         return {
-            "application": "vesselScraper1",
+            "application": "polaris-vessels-v1",
             "imoCode": self.imo,
             "schemaVersion": 1,
-            "timestamp": self.time_stamp,
+            "timeStampEpoch": self.time_stamp,
             "url": self.url,
             "observation": {}
         }
