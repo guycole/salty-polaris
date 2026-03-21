@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 import yaml
 from yaml.loader import SafeLoader
 
+
 @dataclass
 class VesselRecord:
     name: str
@@ -36,11 +37,14 @@ class VesselRecord:
     in_port: bool = False
 
     def __repr__(self) -> str:
-        return (f"VesselRecord(name={self.name!r}, type={self.vessel_type!r}, flag={self.flag!r}, size={self.size!r}, gross_ton={self.gross_ton!r}, built={self.built!r})")
+        return f"VesselRecord(name={self.name!r}, type={self.vessel_type!r}, flag={self.flag!r}, size={self.size!r}, gross_ton={self.gross_ton!r}, built={self.built!r})"
+
 
 class PortScraper:
 
-    def __init__(self, base_url:str, fresh_dir:str, path:str, port:str, time_stamp:int) -> None:
+    def __init__(
+        self, base_url: str, fresh_dir: str, path: str, port: str, time_stamp: int
+    ) -> None:
         self.base_url = base_url
         self.fresh_dir = fresh_dir
         self.path = path
@@ -61,7 +65,7 @@ class PortScraper:
         }
         self.timeout: int = 30
 
-    def fetch(self, write_flag:bool) -> str:
+    def fetch(self, write_flag: bool) -> str:
         logger.info("fetching %s", self.url)
 
         response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
@@ -75,7 +79,7 @@ class PortScraper:
                 f.write(response.text)
 
         return response.text
-    
+
     def get_base_file_name(self) -> str:
         return f"{self.fresh_dir}/{self.port}-{self.time_stamp}"
 
@@ -94,10 +98,18 @@ class PortScraper:
                 if flag_div.has_attr("title"):
                     return flag_div["title"].strip()
                 flag_title_tag = flag_div.find(lambda tag: tag.has_attr("title"))
-                if flag_title_tag and flag_title_tag.get("title") and flag_title_tag["title"].strip():
+                if (
+                    flag_title_tag
+                    and flag_title_tag.get("title")
+                    and flag_title_tag["title"].strip()
+                ):
                     return flag_title_tag["title"].strip()
                 for descendant in flag_div.descendants:
-                    if hasattr(descendant, "attrs") and descendant.attrs.get("title") and descendant.attrs["title"].strip():
+                    if (
+                        hasattr(descendant, "attrs")
+                        and descendant.attrs.get("title")
+                        and descendant.attrs["title"].strip()
+                    ):
                         return descendant.attrs["title"].strip()
                 if flag_div.text.strip():
                     return flag_div.text.strip()
@@ -125,9 +137,15 @@ class PortScraper:
                     name_div = named_inner.find("div", class_="named-title")
                     vessel_type_div = named_inner.find("div", class_="named-subtitle")
                     name = name_div.text.strip() if name_div else None
-                    vessel_type = vessel_type_div.text.strip() if vessel_type_div else None
+                    vessel_type = (
+                        vessel_type_div.text.strip() if vessel_type_div else None
+                    )
                 vessel_link = vessel_col.find("a", class_="named-item")
-                vessel_url = urljoin(self.base_url, vessel_link["href"]) if vessel_link and vessel_link.has_attr("href") else None
+                vessel_url = (
+                    urljoin(self.base_url, vessel_link["href"])
+                    if vessel_link and vessel_link.has_attr("href")
+                    else None
+                )
                 flag_div = vessel_col.find("div", class_="m-flag-small")
                 flag = extract_flag(flag_div)
                 # Parse built, gt, and size columns if present
@@ -135,8 +153,8 @@ class PortScraper:
                 gt = cols[5].text.strip() if len(cols) > 5 else None
                 size = None
                 for td in cols:
-                    td_classes = td.get('class', [])
-                    if any('col-sizes' in c for c in td_classes):
+                    td_classes = td.get("class", [])
+                    if any("col-sizes" in c for c in td_classes):
                         size = td.text.strip()
                         break
                 record = VesselRecord(
@@ -149,7 +167,7 @@ class PortScraper:
                     built=built,
                     arrival=date_val if date_field == "arrival" else None,
                     departure=date_val if date_field == "departure" else None,
-                    in_port=in_port_flag
+                    in_port=in_port_flag,
                 )
                 records.append(record)
             return records
@@ -169,7 +187,7 @@ class PortScraper:
 
         results = self.parse(raw_html)
         print(len(results), "vessels found for port", self.port)
-      
+
         return results
 
     def json_preamble(self) -> dict:
@@ -179,36 +197,39 @@ class PortScraper:
             "schemaVersion": 1,
             "timeStampEpoch": self.time_stamp,
             "url": self.url,
-            "vessels": []
+            "vessels": [],
         }
+
 
 class Driver:
     def __init__(self, configuration: dict[str, any]) -> None:
-        self.fresh_dir = configuration['freshDir']
-        self.port_targets = configuration['portTargets']
+        self.fresh_dir = configuration["freshDir"]
+        self.port_targets = configuration["portTargets"]
 
-        self.base_url = configuration['vesselFinderUrl']
-        self.ports_path = configuration['portsPath']
+        self.base_url = configuration["vesselFinderUrl"]
+        self.ports_path = configuration["portsPath"]
 
     def vessel_to_dict(self, vessel: VesselRecord) -> dict:
         return {
             "name": vessel.name,
-            "vessel_url": vessel.vessel_url,
-            "vessel_type": vessel.vessel_type,
+            "vesselUrl": vessel.vessel_url,
+            "vesselType": vessel.vessel_type,
             "flag": vessel.flag,
             "size": 0 if len(vessel.size) < 2 else vessel.size,
-            "gross_ton": 0 if len(vessel.gross_ton) < 2 else int(vessel.gross_ton),
+            "grossTon": 0 if len(vessel.gross_ton) < 2 else int(vessel.gross_ton),
             "built": 0 if len(vessel.built) < 2 else int(vessel.built),
             "arrival": vessel.arrival,
             "departure": vessel.departure,
-            "in_port": vessel.in_port
+            "inPort": vessel.in_port,
         }
-  
-    def json_writer(self, file_name:str, payload: dict, vessel_list: List[VesselRecord]) -> None:
+
+    def json_writer(
+        self, file_name: str, payload: dict, vessel_list: List[VesselRecord]
+    ) -> None:
         for vessel in vessel_list:
             vessel_dict = self.vessel_to_dict(vessel)
             payload["vessels"].append(vessel_dict)
-    
+
         try:
             with open(f"{file_name}.json", "w") as out_file:
                 json.dump(payload, out_file, indent=4)
@@ -217,17 +238,19 @@ class Driver:
 
     def execute(self) -> None:
         print(f"collection for {len(self.port_targets)} ports")
-    
+
         time_stamp = int(time.time())
 
         raw_html_file = "/var/polaris/fresh/USBNC001-1773890936.html"
 
         raw_html = None
-#        with open(raw_html_file, "r", encoding="utf-8") as f:
-#            raw_html = f.read()
+        #        with open(raw_html_file, "r", encoding="utf-8") as f:
+        #            raw_html = f.read()
 
         for port in self.port_targets:
-            scraper = PortScraper(self.base_url, self.fresh_dir, self.ports_path, port, time_stamp)
+            scraper = PortScraper(
+                self.base_url, self.fresh_dir, self.ports_path, port, time_stamp
+            )
             base_file_name = scraper.get_base_file_name()
             vessel_list = scraper.collection(raw_html)
             payload = scraper.json_preamble()
