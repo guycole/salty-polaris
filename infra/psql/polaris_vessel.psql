@@ -1,11 +1,6 @@
 --
 -- Title: polaris_vessel.psql
--- Description: polaris load history for each observation file
---
--- file_name within fresh_dir
--- file_time is from preamble timeStampEpoch
--- file_type is from preamble application, i.e. polaris_v1
--- load_time is when file was processed
+-- Description: polaris vessel catalog
 --
 create table polaris_vessel (
   id           bigserial   primary key,
@@ -13,6 +8,8 @@ create table polaris_vessel (
   beam         integer not null,
   built_year   integer not null,
   callsign     varchar(24) not null,
+  date_first   date        not null default CURRENT_DATE,
+  date_recent  date        not null default CURRENT_DATE,
   gross_ton    integer not null,
   imo_code     varchar(24) unique not null,
   length       integer not null,

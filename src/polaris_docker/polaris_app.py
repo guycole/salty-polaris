@@ -7,7 +7,8 @@
 import logging
 import os
 
-from loader import PolarisLoader
+from ports import PortDriver, PortScraper
+#from loader import PolarisLoader
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -22,9 +23,12 @@ logger = logging.getLogger("polaris")
 
 class PolarisApp:
 
-    def __init__(self, score_limit, stunt_box: str):
-        self.score_limit = score_limit
-        self.stunt_box = stunt_box
+    def __init__(self, args: dict[str, any]):
+        self.stunt_box = args['stunt_box']
+
+        self.cooked_dir = "/var/polaris/cooked"
+        self.fail_dir = "/var/polaris/failure"
+        self.fresh_dir = "/var/polaris/fresh"
 
 #        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
 #        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
@@ -35,29 +39,34 @@ class PolarisApp:
     def execute(self) -> None:
         logger.info(f"polaris execute:{self.stunt_box}")
 
-        loader = PolarisLoader({
-            "freshDir": "/var/polaris/fresh",
-            "vesselTargets": []
-        }, self.postgres)
-        loader.execute()
+#        loader = PolarisLoader({
+#            "freshDir": "/var/polaris/fresh",
+#            "vesselTargets": []
+#        }, self.postgres)
+#        loader.execute()
 
-#       if self.stunt_box == "score":
-#            scorer = Scorer(self.postgres)
-#            scorer.scorer(self.score_limit)
+        if self.stunt_box == "port_collection":
+            port_driver = PortDriver({})
+            #port_driver = PortDriver(self.postgres)
+            #scorer = Scorer(self.postgres)
+            #scorer.scorer(self.score_limit)
 #        elif self.stunt_box == "validate":
 #            validator = Validator(self.postgres)
 #            validator.validate()
-#        else:
-#            logger.error(f"invalid stunt_box option:{self.stunt_box}")
-#            return
+        else:
+            logger.error(f"invalid stunt_box option:{self.stunt_box}")
+            return
 
 
 if __name__ == "__main__":
     # stunt_box options: "score" and "validate"
-    score_limit = os.environ.get("limit", -1)
-    stunt_box = os.environ.get("stuntbox", "validate")
+    args = {
+        "stunt_box":"port_collection"
+    }
 
-    app = PolarisApp(int(score_limit), stunt_box)
+#    stunt_box = os.environ.get("stuntbox", "validate")
+
+    app = PolarisApp(args)
     app.execute()
 
 # ;;; Local Variables: ***

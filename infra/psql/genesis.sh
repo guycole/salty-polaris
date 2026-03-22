@@ -5,7 +5,7 @@
 # Development Environment: OS X 12.7.6/postgres 15.8
 #
 # macbook 
-psql -U gsc template1
+# psql -U gsc template1
 createuser -U gsc -d -e -l -P -r -s polaris_admin
 woofwoof
 createuser -U gsc -e -l -P polaris_client

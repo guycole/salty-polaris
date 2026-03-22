@@ -16,4 +16,3 @@ source venv/bin/activate
 python3 ./ports.py
 echo "end port collection"
 #
-
