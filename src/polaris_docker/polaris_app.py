@@ -4,6 +4,7 @@
 # Development Environment: Ubuntu 22.04.5 LTS/python 3.10.12
 # Author: G.S. Cole (guycole at gmail dot com)
 #
+from typing import List
 import logging
 import os
 
@@ -36,27 +37,39 @@ class PolarisApp:
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
+    def get_port_urls(self) -> List[str]:
+        default_ports = [
+            "USBNC001", "USMRZ001", "USRD4001", "USSEL001", "USCRM001",
+            "USPZH001", "USPBG001", "USANZ001", "USOQY001", "USSAC001",
+            "USSCK001", "USRCH001", "USOAK001", "USSFO001", "USRWC002",
+            "USMY3001", "USFOB001", "USEKA001", "USCEC001", "USVLO001"
+        ]
+
+        ports_list = self.postgres.port_select_for_scrape()
+
+        # TODO if ports list is empty build urls from default ports
+        
+        return ports_list
+
+    def port_collection(self):
+        targets = self.get_port_urls()
+        # TODO: Implement port collection logic
+        pass
+
+    def vessel_collection(self):
+        pass
+
     def execute(self) -> None:
-        logger.info(f"polaris execute:{self.stunt_box}")
+        logger.info(f"polaris execute")
 
-#        loader = PolarisLoader({
-#            "freshDir": "/var/polaris/fresh",
-#            "vesselTargets": []
-#        }, self.postgres)
-#        loader.execute()
+        port_args = {
+            "fresh_dir": self.fresh_dir,
+        }
 
-        if self.stunt_box == "port_collection":
-            port_driver = PortDriver({})
-            #port_driver = PortDriver(self.postgres)
-            #scorer = Scorer(self.postgres)
-            #scorer.scorer(self.score_limit)
-#        elif self.stunt_box == "validate":
-#            validator = Validator(self.postgres)
-#            validator.validate()
-        else:
-            logger.error(f"invalid stunt_box option:{self.stunt_box}")
-            return
+        port_urls = self.get_port_urls()
+        logger.info(f"port_urls: {len(port_urls)}")
 
+        port_driver = PortDriver(port_args)
 
 if __name__ == "__main__":
     # stunt_box options: "score" and "validate"

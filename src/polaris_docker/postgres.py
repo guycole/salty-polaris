@@ -10,7 +10,7 @@
 
 import datetime
 import time
-
+from sql_table import PolarisPort
 from typing import List, Dict
 
 import sqlalchemy
@@ -22,7 +22,6 @@ from sql_table import (
     LoadLog,
     PolarisVessel,
 )
-
 
 class PostGres:
     db_engine = None
@@ -86,6 +85,16 @@ class PostGres:
             return session.scalars(
                 select(LoadLog).filter_by(file_name=file_name)
             ).first()
+
+    def port_select_for_scrape(self) -> list[str]:
+        """
+        Select all URLs from polaris_port table where scrape_flag is true.
+        Returns a list of URLs.
+        """
+        with self.Session() as session:
+            return [row.url for row in session.scalars(
+                select(PolarisPort).filter_by(scrape_flag=True)
+            ).all()]
 
     def vessel_insert_or_update(self, args: dict[str, any]) -> PolarisVessel:
         try:

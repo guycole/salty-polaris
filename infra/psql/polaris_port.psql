@@ -32,3 +32,4 @@ insert into polaris_port(port_code, port_name, scrape_flag, url) values('USMY300
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USFOB001', 'Fort Bragg',    true, 'https://www.vesselfinder.com/ports/USFOB001');
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USEKA001', 'Eureka',        true, 'https://www.vesselfinder.com/ports/USEKA001');
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USCEC001', 'Crescent City', true, 'https://www.vesselfinder.com/ports/USCEC001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USVLO001', 'Vallejo',       true, 'https://www.vesselfinder.com/ports/USVLO001');

@@ -25,6 +25,17 @@ from sql_table import (
 
 
 class PostGres:
+
+        def port_select_for_scrape(self) -> list[str]:
+            """
+            Select all URLs from polaris_port table where scrape_flag is true.
+            Returns a list of URLs.
+            """
+            from sql_table import PolarisPort
+            with self.Session() as session:
+                return [row.url for row in session.scalars(
+                    select(PolarisPort).filter_by(scrape_flag=True)
+                ).all()]
     db_engine = None
     Session = None
 

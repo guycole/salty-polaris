@@ -1,0 +1,52 @@
+#
+cookedDir: /var/polaris/cooked
+failureDir: /var/polaris/failure
+freshDir: /var/polaris/fresh
+#
+vesselFinderUrl: "https://www.vesselfinder.com"
+#
+portTargetUrls: 
+  - "https://www.vesselfinder.com/ports/USBNC001"
+  - "https://www.vesselfinder.com/ports/USMRZ001"
+  - "https://www.vesselfinder.com/ports/USRD4001"
+  - "https://www.vesselfinder.com/ports/USSEL001"
+  - "https://www.vesselfinder.com/ports/USCRM001"
+  - "https://www.vesselfinder.com/ports/USPZH001"
+  - "https://www.vesselfinder.com/ports/USPBG001"
+  - "https://www.vesselfinder.com/ports/USANZ001"
+  - "https://www.vesselfinder.com/ports/USOQY001"
+  - "https://www.vesselfinder.com/ports/USSAC001"
+  - "https://www.vesselfinder.com/ports/USSCK001"
+  - "https://www.vesselfinder.com/ports/USRCH001"
+  - "https://www.vesselfinder.com/ports/USOAK001"
+  - "https://www.vesselfinder.com/ports/USSFO001"
+  - "https://www.vesselfinder.com/ports/USRWC002"
+  - "https://www.vesselfinder.com/ports/USMY3001"
+  - "https://www.vesselfinder.com/ports/USFOB001"
+  - "https://www.vesselfinder.com/ports/USEKA001"
+  - "https://www.vesselfinder.com/ports/USCEC001"
+#
+
+# test vessels
+vesselTargets:
+  - "https://www.vesselfinder.com/vessels/details/9665748"
+  - "https://www.vesselfinder.com/vessels/details/9312808"
+  - "https://www.vesselfinder.com/vessels/details/9369203"
+  - "https://www.vesselfinder.com/vessels/details/8652964"
+  - "https://www.vesselfinder.com/vessels/details/9566394"
+  - "https://www.vesselfinder.com/vessels/details/9389409"
+  - "https://www.vesselfinder.com/vessels/details/9938339"
+  - "https://www.vesselfinder.com/vessels/details/9359040"
+  - "https://www.vesselfinder.com/vessels/details/9353565"
+  - "https://www.vesselfinder.com/vessels/details/9759886"
+  - "https://www.vesselfinder.com/vessels/details/9351062"
+  - "https://www.vesselfinder.com/vessels/details/9752395"
+  - "https://www.vesselfinder.com/vessels/details/9984869"
+  - "https://www.vesselfinder.com/vessels/details/9568184"
+  - "https://www.vesselfinder.com/vessels/details/9793387"
+  - "https://www.vesselfinder.com/vessels/details/9481075"
+  - "https://www.vesselfinder.com/vessels/details/9514999"
+  - "https://www.vesselfinder.com/vessels/details/9325776"
+  - "https://www.vesselfinder.com/vessels/details/1045710"
+  - "https://www.vesselfinder.com/vessels/details/9325439"
+#

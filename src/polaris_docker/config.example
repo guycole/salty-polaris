@@ -1,0 +1,10 @@
+#
+freshDir: /var/polaris/fresh
+#
+portsPath: "/ports"
+vesselFinderUrl: "https://www.vesselfinder.com"
+#
+# Ports to scrape
+portTargets: 
+  - "USBNC001"
+#

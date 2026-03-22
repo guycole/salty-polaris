@@ -43,6 +43,21 @@ class LoadLog(Base):
     def __repr__(self):
         return f"load_log({self.file_name} {self.file_time} {self.platform})"
 
+class PolarisPort(Base):
+    __tablename__ = "polaris_port"
+
+    id = Column(Integer, primary_key=True)
+    port_code = Column(String)
+    port_name = Column(String)
+    scrape_flag = Column(Boolean)
+    url = Column(String)
+
+    def __init__(self, args: dict[str, any]):
+        self.port_code = args["port_code"]
+        self.port_name = args["port_name"]
+        self.scrape_flag = args["scrape_flag"]
+        self.url = args["url"]
+
 class PolarisVessel(Base):
     __tablename__ = "polaris_vessel"
 
