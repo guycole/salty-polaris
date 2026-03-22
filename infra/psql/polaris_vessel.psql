@@ -1,0 +1,30 @@
+--
+-- Title: polaris_vessel.psql
+-- Description: polaris load history for each observation file
+--
+-- file_name within fresh_dir
+-- file_time is from preamble timeStampEpoch
+-- file_type is from preamble application, i.e. polaris_v1
+-- load_time is when file was processed
+--
+create table polaris_vessel (
+  id           bigserial   primary key,
+  ais_type     varchar(32) not null,
+  beam         integer not null,
+  built_year   integer not null,
+  callsign     varchar(24) not null,
+  gross_ton    integer not null,
+  imo_code     varchar(24) unique not null,
+  length       integer not null,
+  mmsi_code    varchar(24) unique not null,
+  scrape_flag  boolean     not null default false,
+  url          varchar(64) not null,
+  vessel_flag  varchar(32) not null,
+  vessel_name  varchar(64) not null,
+  vessel_type  varchar(64) not null default 'Unknown'
+);
+
+grant select, insert, update, delete on polaris_vessel to polaris_client;
+grant usage, select on sequence polaris_vessel_id_seq to polaris_client;
+
+insert into polaris_vessel(ais_type, beam, built_year, callsign, gross_ton, imo_code, length, mmsi_code, scrape_flag, url, vessel_flag, vessel_name, vessel_type) values('Passenger ship', 22, 1989, 'WDL2000', 12517, '8834407', 152, '367978000', true, 'https://www.vesselfinder.com/vessels/8834407', 'United States', 'GOLDEN BEAR', 'Training Ship');

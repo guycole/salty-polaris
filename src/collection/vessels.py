@@ -303,7 +303,7 @@ class VesselScraper:
             last_port_code=last_port_code,
         )
 
-    def collection(self, raw_html: str) -> None:
+    def collection(self, raw_html: str) -> dict[str, any]:
         if raw_html is None:
             raw_html = self.fetch(True)
         else:
@@ -314,7 +314,7 @@ class VesselScraper:
         preamble = self.json_preamble()
         preamble["observation"] = results.to_dict()
         self.json_writer(preamble)
-
+        return preamble
 
 class Driver:
     def __init__(self, configuration: dict[str, any]) -> None:

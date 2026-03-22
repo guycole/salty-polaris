@@ -1,0 +1,34 @@
+--
+-- Title: polaris_port.psql
+-- Description: polaris port definitions
+--
+create table polaris_port (
+  id            bigserial    primary key,
+  port_code     varchar(24)  unique not null,
+  port_name     varchar(64)  unique not null,
+  scrape_flag   boolean      not null default false,
+  url           varchar(64)  not null
+);
+
+grant select, insert, update, delete on polaris_port to polaris_client;
+grant usage, select on sequence polaris_port_id_seq to polaris_client;
+
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USBNC001', 'Benicia',       true, 'https://www.vesselfinder.com/ports/USBNC001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USMRZ001', 'Martinez',      true, 'https://www.vesselfinder.com/ports/USMRZ001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USRD4001', 'Roodeo',        true, 'https://www.vesselfinder.com/ports/USRD4001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USSEL001', 'Selby',         true, 'https://www.vesselfinder.com/ports/USSEL001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USCRM001', 'Crockett',      true, 'https://www.vesselfinder.com/ports/USCRM001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USPZH001', 'Port Chicago',  true, 'https://www.vesselfinder.com/ports/USPZH001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USPBG001', 'Pittsburg',     true, 'https://www.vesselfinder.com/ports/USPBG001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USANZ001', 'Antioch',       true, 'https://www.vesselfinder.com/ports/USANZ001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USOQY001', 'Oakley',        true, 'https://www.vesselfinder.com/ports/USOQY001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USSAC001', 'Sacramento',    true, 'https://www.vesselfinder.com/ports/USSAC001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USSCK001', 'Stockton',      true, 'https://www.vesselfinder.com/ports/USSCK001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USRCH001', 'Richmond',      true, 'https://www.vesselfinder.com/ports/USRCH001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USOAK001', 'Oakland',       true, 'https://www.vesselfinder.com/ports/USOAK001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USSFO001', 'San Francisco', true, 'https://www.vesselfinder.com/ports/USSFO001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USRWC002', 'Redwood City',  true, 'https://www.vesselfinder.com/ports/USRWC002');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USMY3001', 'Monterey',      true, 'https://www.vesselfinder.com/ports/USMY3001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USFOB001', 'Fort Bragg',    true, 'https://www.vesselfinder.com/ports/USFOB001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USEKA001', 'Eureka',        true, 'https://www.vesselfinder.com/ports/USEKA001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USCEC001', 'Crescent City', true, 'https://www.vesselfinder.com/ports/USCEC001');

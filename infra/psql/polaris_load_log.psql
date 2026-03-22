@@ -1,0 +1,19 @@
+--
+-- Title: polaris_load_log.psql
+-- Description: polaris load history for each observation file
+--
+-- file_name within fresh_dir
+-- file_time is from preamble timeStampEpoch
+-- file_type is from preamble application, i.e. polaris_v1
+-- load_time is when file was processed
+--
+create table polaris_load_log (
+  id            bigserial    primary key,
+  file_name     varchar(48)  unique not null,
+  file_time     timestamp    not null,
+  file_type     varchar(16)  not null,
+  load_time     timestamp    not null default CURRENT_TIMESTAMP
+);
+
+grant select, insert, update, delete on polaris_load_log to polaris_client;
+grant usage, select on sequence polaris_load_log_id_seq to polaris_client;
