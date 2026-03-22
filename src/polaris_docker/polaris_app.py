@@ -63,13 +63,18 @@ class PolarisApp:
         logger.info(f"polaris execute")
 
         port_args = {
-            "fresh_dir": self.fresh_dir,
+            "freshDir": self.fresh_dir,
         }
+
+        port_driver = PortDriver(port_args)
 
         port_urls = self.get_port_urls()
         logger.info(f"port_urls: {len(port_urls)}")
-
-        port_driver = PortDriver(port_args)
+#        port_urls = ["https://www.vesselfinder.com/ports/USVLO001"]
+        for url in port_urls:
+            logger.info(f"collecting port data for {url}")
+            vessel_list = port_driver.execute(url, False)
+            print(vessel_list)
 
 if __name__ == "__main__":
     # stunt_box options: "score" and "validate"

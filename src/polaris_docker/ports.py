@@ -26,11 +26,11 @@ class VesselRecord:
     vessel_url: str
     vessel_type: str 
     flag: str 
-    size: str 
-    gross_ton: str
-    built: str 
     arrival: str
     departure: str
+    built: str = "0"
+    size: str = "0" 
+    gross_ton: str = "0"
     in_port: bool = False
 
     def __repr__(self) -> str:
@@ -57,6 +57,20 @@ class PortScraper:
         self.html_file_name = html_file_name
         self.port = url.split("/")[-1]
         self.url = url
+
+        self.headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": "https://www.vesselfinder.com/",
+            "Connection": "keep-alive",
+        }
+
+        self.timeout: int = 30
 
         def extract_flag(flag_div) -> str:
             if not flag_div:
@@ -186,6 +200,18 @@ class PortScraper:
         all_vessels.extend(parse_table_section("in-port", None, True))
         return all_vessels
 
+    def fetch(self, write_flag: bool) -> str:
+        logger.info("fetching %s", self.url)
+
+        response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
+        response.raise_for_status()
+
+        if write_flag:           
+            with open(f"{self.fresh_dir}/{self.html_file_name}", "w", encoding="utf-8") as f:
+                f.write(response.text)
+
+        return response.text
+
     def collection(self, raw_html: str) -> list[VesselRecord]:
         if raw_html is None:
             print("fetching fresh html for collection")
@@ -224,11 +250,15 @@ class PortDriver:
             print(error)
 
     def execute(self, port_url: str, test_flag: bool) -> list[VesselRecord]:
+        raw_html = None
+
         if test_flag:
             # read existing html file for testing
             raw_port_url = "https://www.vesselfinder.com/ports/USSEL001"
             raw_html_file = "/var/polaris/fresh/f985eb7d-3788-4277-bbbc-8f101288f592.html"
-            raw_html = None
+
+            raw_port_url = "https://www.vesselfinder.com/ports/USVLO001"
+            raw_html_file = "/var/polaris/fresh/6c9f657d-a19f-449a-9af7-8b4be5682245.html"
 
             with open(raw_html_file, "r", encoding="utf-8") as f:
                 raw_html = f.read()

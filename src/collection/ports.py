@@ -25,20 +25,32 @@ from yaml.loader import SafeLoader
 
 @dataclass
 class VesselRecord:
-    name: str
-    vessel_url: Optional[str] = None
-    vessel_type: Optional[str] = None
-    flag: Optional[str] = None
-    size: Optional[str] = None
-    gross_ton: Optional[str] = None
-    built: Optional[str] = None
-    arrival: Optional[str] = None
-    departure: Optional[str] = None
+    name: str 
+    vessel_url: str
+    vessel_type: str 
+    flag: str
+    arrival: str
+    departure: str
+    size: str
+    built: str 
+    gross_ton: str
     in_port: bool = False
 
     def __repr__(self) -> str:
         return f"VesselRecord(name={self.name!r}, type={self.vessel_type!r}, flag={self.flag!r}, size={self.size!r}, gross_ton={self.gross_ton!r}, built={self.built!r})"
 
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "vesselUrl": self.vessel_url,
+            "vesselType": self.vessel_type,
+            "flag": self.flag,
+            "size": 0 if len(self.size) < 2 else self.size,
+            "grossTon": 0 if len(self.gross_ton) < 2 else int(self.gross_ton),
+            "built": 0 if len(self.built) < 2 else int(self.built),
+            "arrival": self.arrival,
+            "departure": self.departure,
+        } 
 
 class PortScraper:
 
