@@ -71,6 +71,7 @@ class PolarisApp:
         port_urls = self.get_port_urls()
         logger.info(f"port_urls: {len(port_urls)}")
 #        port_urls = ["https://www.vesselfinder.com/ports/USVLO001"]
+#        port_urls = ["https://www.vesselfinder.com/ports/USPZH001"]
         for url in port_urls:
             logger.info(f"collecting port data for {url}")
             vessel_list = port_driver.execute(url, False)

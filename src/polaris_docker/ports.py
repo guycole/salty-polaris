@@ -165,17 +165,17 @@ class PortScraper:
                 gt = ""
                 size = ""
                 if len(cols) > 4:
-                    built = cols[4].text.strip() if cols[4].text.strip() != "-" else ""
-                if len(cols) > 5:
-                    gt = cols[5].text.strip() if cols[5].text.strip() != "-" else ""
-                if len(cols) > 7:
-                    size = cols[7].text.strip() if cols[7].text.strip() != "-" else ""
-                else:
+                    built = ""
+                    gt = ""
+                    size = ""
                     for td in cols:
                         td_classes = td.get("class", [])
+                        if any("col-y" in c for c in td_classes):
+                            built = td.text.strip() if td.text.strip() != "-" else ""
+                        if any("col-gt" in c for c in td_classes):
+                            gt = td.text.strip() if td.text.strip() != "-" else ""
                         if any("col-sizes" in c for c in td_classes):
-                            size = td.text.strip()
-                            break
+                            size = td.text.strip() if td.text.strip() != "-" else ""
                 arrival_val = date_val if date_field == "arrival" else ""
                 departure_val = date_val if date_field == "departure" else ""
                 record = VesselRecord(
@@ -260,10 +260,14 @@ class PortDriver:
             raw_port_url = "https://www.vesselfinder.com/ports/USVLO001"
             raw_html_file = "/var/polaris/fresh/6c9f657d-a19f-449a-9af7-8b4be5682245.html"
 
+            raw_port_url = "https://www.vesselfinder.com/ports/USPZH001"
+            raw_html_file = "/var/polaris/fresh/1231c64a-2904-4eed-b749-41a4fcd38030.html"
+
             with open(raw_html_file, "r", encoding="utf-8") as f:
                 raw_html = f.read()
                 scraper = PortScraper(self.fresh_dir, None, raw_port_url)
                 vessel_list = scraper.collection(raw_html)
+                print(vessel_list)
                 return vessel_list
 
         base_file_name = str(uuid.uuid4())
