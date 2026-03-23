@@ -8,8 +8,8 @@ from typing import List
 import logging
 import os
 
-from ports import PortDriver, PortScraper
-#from loader import PolarisLoader
+from ports import PortDriver, VesselRecord
+from vessels import VesselDriver, VesselScraper
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -51,13 +51,15 @@ class PolarisApp:
         
         return ports_list
 
-    def port_collection(self):
-        targets = self.get_port_urls()
-        # TODO: Implement port collection logic
-        pass
+    def vessel_collection(self, vessel_list: List[VesselRecord]) -> None:
+        print(f"vessel collection: {len(vessel_list)} vessels")
 
-    def vessel_collection(self):
-        pass
+        for vessel in vessel_list:
+            print(vessel)
+            print(vessel.vessel_url)
+
+            vessel_driver = VesselDriver({"freshDir": self.fresh_dir})
+            vessel_driver.execute(vessel.vessel_url, False)
 
     def execute(self) -> None:
         logger.info(f"polaris execute")
@@ -71,11 +73,11 @@ class PolarisApp:
         port_urls = self.get_port_urls()
         logger.info(f"port_urls: {len(port_urls)}")
 #        port_urls = ["https://www.vesselfinder.com/ports/USVLO001"]
-#        port_urls = ["https://www.vesselfinder.com/ports/USPZH001"]
+        port_urls = ["https://www.vesselfinder.com/ports/USPZH001"]
         for url in port_urls:
             logger.info(f"collecting port data for {url}")
-            vessel_list = port_driver.execute(url, False)
-            print(vessel_list)
+            vessel_list = port_driver.execute(url, True)
+            self.vessel_collection(vessel_list)
 
 if __name__ == "__main__":
     # stunt_box options: "score" and "validate"

@@ -217,13 +217,13 @@ class PortScraper:
             print("fetching fresh html for collection")
             raw_html = self.fetch(True)
         else:
-            print("Using provided raw HTML for collection")
+            print("Using saved HTML for collection")
 
         results = self.parse(raw_html)
         print(f"{self.port} collection results: {len(results)} vessels found")
         return results
 
-    def json_preamble(self, json_file_name: str) -> dict:
+    def json_preamble(self, json_file_name: str) -> dict[str, any]:
         return {
             "application": "polaris-ports-v1",
             "fileName": json_file_name,
@@ -238,7 +238,7 @@ class PortDriver:
     def __init__(self, configuration: dict[str, any]) -> None:
         self.fresh_dir = configuration["freshDir"]
 
-    def json_writer(self, payload: dict, vessel_list: list[VesselRecord]) -> None:
+    def json_writer(self, payload: dict[str, any], vessel_list: list[VesselRecord]) -> None:
         for vessel in vessel_list:
             vessel_dict = vessel.to_dict()
             payload["vessels"].append(vessel_dict)
