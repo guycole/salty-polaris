@@ -26,27 +26,12 @@ portTargetUrls:
   - "https://www.vesselfinder.com/ports/USEKA001"
   - "https://www.vesselfinder.com/ports/USCEC001"
 #
-
 # test vessels
 vesselTargets:
   - "https://www.vesselfinder.com/vessels/details/9665748"
   - "https://www.vesselfinder.com/vessels/details/9312808"
-  - "https://www.vesselfinder.com/vessels/details/9369203"
-  - "https://www.vesselfinder.com/vessels/details/8652964"
-  - "https://www.vesselfinder.com/vessels/details/9566394"
-  - "https://www.vesselfinder.com/vessels/details/9389409"
-  - "https://www.vesselfinder.com/vessels/details/9938339"
-  - "https://www.vesselfinder.com/vessels/details/9359040"
-  - "https://www.vesselfinder.com/vessels/details/9353565"
-  - "https://www.vesselfinder.com/vessels/details/9759886"
-  - "https://www.vesselfinder.com/vessels/details/9351062"
-  - "https://www.vesselfinder.com/vessels/details/9752395"
-  - "https://www.vesselfinder.com/vessels/details/9984869"
-  - "https://www.vesselfinder.com/vessels/details/9568184"
-  - "https://www.vesselfinder.com/vessels/details/9793387"
-  - "https://www.vesselfinder.com/vessels/details/9481075"
-  - "https://www.vesselfinder.com/vessels/details/9514999"
-  - "https://www.vesselfinder.com/vessels/details/9325776"
-  - "https://www.vesselfinder.com/vessels/details/1045710"
-  - "https://www.vesselfinder.com/vessels/details/9325439"
+#
+#
+vesselObservations:
+  - "/var/polaris/fresh/fc0ce028-fd79-4e12-ba9d-cb61796d1b11.json"
 #

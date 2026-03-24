@@ -4,6 +4,7 @@
 # Development Environment: Ubuntu 22.04.5 LTS/python 3.10.12
 # Author: G.S. Cole (guycole at gmail dot com)
 #
+from concurrent.interpreters import create
 from datetime import datetime
 
 from sqlalchemy import Column
@@ -19,10 +20,10 @@ mapper_registry = registry()
 class Base(DeclarativeBase):
     pass
 
-class LoadLog(Base):
+class PolarisLoadLog(Base):
     """load_log table definition"""
 
-    __tablename__ = "heeler_load_log"
+    __tablename__ = "polaris_load_log"
 
     id = Column(Integer, primary_key=True)
     file_name = Column(String)
@@ -42,6 +43,31 @@ class LoadLog(Base):
 
     def __repr__(self):
         return f"load_log({self.file_name} {self.file_time} {self.platform})"
+
+class PolarisObservation(Base):
+    __tablename__ = "polaris_observation"
+
+    id = Column(Integer, primary_key=True)
+    imo_code = Column(String)
+    time_stamp = Column(DateTime)
+    course = Column(Float)
+    speed = Column(Float)
+    nav_status = Column(String)
+    dest_code = Column(String)
+    arrival = Column(DateTime)
+    origin_code = Column(String)
+    departure = Column(DateTime)
+
+    def __init__(self, args: dict[str, any]):
+        self.imo_code = args["imo_code"]
+        self.time_stamp = args["time_stamp"]
+        self.course = args["course"]
+        self.speed = args["speed"]
+        self.nav_status = args["nav_status"]
+        self.dest_code = args["dest_code"]
+        self.arrival = args["arrival"]
+        self.origin_code = args["origin_code"]
+        self.departure = args["departure"]
 
 class PolarisPort(Base):
     __tablename__ = "polaris_port"

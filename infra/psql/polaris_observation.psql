@@ -2,14 +2,18 @@
 -- Title: polaris_observation.psql
 -- Description: polaris vessel observations
 --
---
 create table polaris_observation (
-  id           bigserial   primary key,
- 
-  imo_code     varchar(24) unique not null,
+  id           bigserial    primary key,
+  imo_code     varchar(24)  not null,
   time_stamp   timestamp    not null,
+  course       real         not null,
+  speed        real         not null,
+  nav_status   varchar(24)  not null,
+  dest_code    varchar(24)  not null,
+  arrival      timestamp    not null,
+  origin_code  varchar(24)  not null,
+  departure    timestamp    not null
 );
 
 grant select, insert, update, delete on polaris_observation to polaris_client;
 grant usage, select on sequence polaris_observation_id_seq to polaris_client;
-

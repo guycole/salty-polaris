@@ -298,7 +298,6 @@ class VesselScraper:
         return {
             "application": "polaris-vessels-v1",
             "fileName": json_file_name,
-            "imoCode": self.imo,
             "schemaVersion": 1,
             "timeStampEpoch": int(time.time()),
             "url": self.url,

@@ -1,10 +1,24 @@
 #
+cookedDir: /var/polaris/cooked
+failureDir: /var/polaris/failure
 freshDir: /var/polaris/fresh
 #
-portsPath: "/ports"
 vesselFinderUrl: "https://www.vesselfinder.com"
 #
 # Ports to scrape
 portTargets: 
   - "USBNC001"
+#
+portTargetUrls: 
+  - "https://www.vesselfinder.com/ports/USBNC001"
+  - "https://www.vesselfinder.com/ports/USMRZ001"
+  - "https://www.vesselfinder.com/ports/USCEC001"
+#
+# test vessels
+vesselTargets:
+  - "https://www.vesselfinder.com/vessels/details/9665748"
+  - "https://www.vesselfinder.com/vessels/details/9312808"
+#
+vesselObservations:
+  - "/var/polaris/fresh/c0ce028-fd79-4e12-ba9d-cb61796d1b11.json"
 #

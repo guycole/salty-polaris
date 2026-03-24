@@ -10,6 +10,7 @@ export PGHOST=localhost
 export PGPASSWORD=woofwoof
 export PGUSER=polaris_admin
 #
+psql $PGDATABASE -c "drop table polaris_observation"
 psql $PGDATABASE -c "drop table polaris_port"
 psql $PGDATABASE -c "drop table polaris_vessel"
 psql $PGDATABASE -c "drop table polaris_load_log"

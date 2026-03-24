@@ -10,7 +10,7 @@
 
 import datetime
 import time
-from sql_table import PolarisPort
+from sql_table import PolarisLoadLog, PolarisObservation, PolarisPort
 from typing import List, Dict
 
 import sqlalchemy
@@ -19,7 +19,9 @@ from sqlalchemy import func
 from sqlalchemy import select
 
 from sql_table import (
-    LoadLog,
+    PolarisLoadLog,
+    PolarisObservation,
+    PolarisPort,
     PolarisVessel,
 )
 
@@ -56,10 +58,10 @@ class PostGres:
 #
 #        return candidate
 
-    def load_log_insert(self, args: dict[str, any]) -> LoadLog:
+    def load_log_insert(self, args: dict[str, any]) -> PolarisLoadLog:
         args["duration_ms"] = 0
 
-        candidate = LoadLog(args)
+        candidate = PolarisLoadLog(args)
 
         try:
             with self.Session() as session:
@@ -86,6 +88,18 @@ class PostGres:
                 select(LoadLog).filter_by(file_name=file_name)
             ).first()
 
+    def observation_insert(self, args: dict[str, any]) -> PolarisObservation:
+        candidate = PolarisObservation(args)
+
+        try:
+            with self.Session() as session:
+                session.add(candidate)
+                session.commit()
+        except Exception as error:
+            print(error)
+
+        return candidate
+
     def port_select_for_scrape(self) -> list[str]:
         """
         Select all URLs from polaris_port table where scrape_flag is true.
@@ -95,6 +109,18 @@ class PostGres:
             return [row.url for row in session.scalars(
                 select(PolarisPort).filter_by(scrape_flag=True)
             ).all()]
+
+    def vessel_insert(self, args: dict[str, any]) -> PolarisVessel:
+        candidate = PolarisVessel(args)
+
+        try:
+            with self.Session() as session:
+                session.add(candidate)
+                session.commit()
+        except Exception as error:
+            print(error)
+
+        return candidate
 
     def vessel_insert_or_update(self, args: dict[str, any]) -> PolarisVessel:
         try:
