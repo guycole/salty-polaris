@@ -5,6 +5,7 @@ scraper for port pages.
 import json
 import logging
 import os
+import random
 import requests
 import sys
 import time
@@ -202,6 +203,9 @@ class PortScraper:
 
     def fetch(self, write_flag: bool) -> str:
         logger.info("fetching %s", self.url)
+
+        # imitate human browsing behavior with random sleep before request
+        time.sleep(random.uniform(3, 10)) 
 
         response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
