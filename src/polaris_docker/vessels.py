@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import random
 import sys
 import json
 from typing import Optional
@@ -95,6 +96,9 @@ class VesselScraper:
     def fetch(self, write_flag: bool) -> str:
         logger.info("fetching %s", self.url)
 
+        # imitate human browsing behavior with random sleep before request
+        time.sleep(random.uniform(3, 10)) 
+        
         response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
 
