@@ -72,7 +72,7 @@ class VesselObservation:
 
 class VesselScraper:
 
-    def __init__(self, fresh_dir: str, html_file_name: str, url: str) -> None:
+    def __init__(self, fresh_dir: str, html_file_name: str, url: str):
         self.fresh_dir = fresh_dir
         self.html_file_name = html_file_name
         self.imo = url.split("/")[-1]
@@ -309,7 +309,7 @@ class VesselScraper:
         }
     
 class VesselDriver:
-    def __init__(self, configuration: dict[str, any]) -> None:
+    def __init__(self, configuration: dict[str, any]):
         self.fresh_dir = configuration["freshDir"]
 
     def json_writer(self, payload: dict[str, any], observation: dict[str, any]) -> None:

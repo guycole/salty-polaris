@@ -11,8 +11,9 @@ portTargets:
 #
 portTargetUrls: 
   - "https://www.vesselfinder.com/ports/USBNC001"
-  - "https://www.vesselfinder.com/ports/USMRZ001"
-  - "https://www.vesselfinder.com/ports/USCEC001"
+#
+portTargetFiles:
+  - "/var/polaris/fresh/f6e8b11f-35cb-4748-a80b-0cfbfe7b9263.html"
 #
 # test vessels
 vesselTargets:

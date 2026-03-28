@@ -13,6 +13,7 @@ import uuid
 
 logger = logging.getLogger(__name__)
 
+from sqlalchemy import exists
 import yaml
 from yaml.loader import SafeLoader
 
@@ -24,13 +25,14 @@ from urllib.parse import urljoin
 @dataclass
 class VesselRecord:
     name: str
+    port_url: str
     vessel_url: str
     vessel_type: str 
     flag: str 
     arrival: str
     departure: str
     built: str = "0"
-    size: str = "0" 
+    size: str = "0"
     gross_ton: str = "0"
     in_port: bool = False
 
@@ -40,6 +42,7 @@ class VesselRecord:
     def to_dict(self) -> dict:
         return {
             "name": self.name,
+            "portUrl": self.port_url,
             "vesselUrl": self.vessel_url,
             "vesselType": self.vessel_type,
             "flag": self.flag,
@@ -50,28 +53,9 @@ class VesselRecord:
             "departure": self.departure,
         } 
 
-class PortScraper:
-
-    def __init__(self, fresh_dir: str, html_file_name: str, url: str) -> None:
+class PortParser:
+    def __init__(self):
         self.base_url = "https://www.vesselfinder.com"
-        self.fresh_dir = fresh_dir
-        self.html_file_name = html_file_name
-        self.port = url.split("/")[-1]
-        self.url = url
-
-        self.headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Referer": "https://www.vesselfinder.com/",
-            "Connection": "keep-alive",
-        }
-
-        self.timeout: int = 30
 
         def extract_flag(flag_div) -> str:
             if not flag_div:
@@ -95,6 +79,10 @@ class PortScraper:
 
     def parse(self, html):
         soup = BeautifulSoup(html, "lxml")
+
+        # Extract canonical URL for the port
+        canonical_link = soup.find("link", rel="canonical")
+        port_url = canonical_link["href"].strip() if canonical_link and canonical_link.has_attr("href") else ""
 
         section_ids = {
             "arrivals": {"id": "arrivals", "date_field": "arrival"},
@@ -181,6 +169,7 @@ class PortScraper:
                 departure_val = date_val if date_field == "departure" else ""
                 record = VesselRecord(
                     name=name,
+                    port_url=port_url,
                     vessel_url=vessel_url,
                     vessel_type=vessel_type,
                     flag=flag,
@@ -201,6 +190,30 @@ class PortScraper:
         all_vessels.extend(parse_table_section("in-port", None, True))
         return all_vessels
 
+class PortScraper:
+
+    def __init__(self, fresh_dir: str):
+        self.fresh_dir = fresh_dir
+
+        self.base_file_name = str(uuid.uuid4())
+        self.html_file_name = f"{self.base_file_name}.html"
+        self.json_file_name = f"{self.base_file_name}.json"
+        print("base_file_name: ", self.base_file_name)
+
+        self.headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": "https://www.vesselfinder.com/",
+            "Connection": "keep-alive",
+        }
+
+        self.timeout: int = 30
+
     def fetch(self, write_flag: bool) -> str:
         logger.info("fetching %s", self.url)
 
@@ -210,83 +223,102 @@ class PortScraper:
         response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
 
-        if write_flag:           
+        if write_flag:
             with open(f"{self.fresh_dir}/{self.html_file_name}", "w", encoding="utf-8") as f:
                 f.write(response.text)
 
         return response.text
 
-    def collection(self, raw_html: str) -> list[VesselRecord]:
-        if raw_html is None:
-            print("fetching fresh html for collection")
-            raw_html = self.fetch(True)
-        else:
-            print("Using saved HTML for collection")
+class PortDriver:
+    def __init__(self, fresh_dir: str):
+        self.fresh_dir = fresh_dir
 
-        results = self.parse(raw_html)
-        print(f"{self.port} collection results: {len(results)} vessels found")
-        return results
+        self.base_file_name = str(uuid.uuid4())
+        self.html_file_name = f"{self.base_file_name}.html"
+        self.json_file_name = f"{self.base_file_name}.json"
+        print("base_file_name: ", self.base_file_name)
 
-    def json_preamble(self, json_file_name: str) -> dict[str, any]:
-        return {
+    def json_preamble(self, vessel_list: list[VesselRecord]) -> dict[str, any]:
+        if len(vessel_list) < 1:
+            return {
+                "application": "polaris-ports-v1",
+                "fileName": self.json_file_name,
+                "portCode": "bogus",
+                "schemaVersion": 1,
+                "timeStampEpoch": int(time.time()),
+                "url": "bogus",
+                "vessels": [],
+            }
+        
+        port_url = vessel_list[0].port_url
+        port_code = port_url.split("/")[-1]
+
+        payload = {
             "application": "polaris-ports-v1",
-            "fileName": json_file_name,
-            "portCode": self.port,
+            "fileName": self.json_file_name,
+            "portCode": port_code,
             "schemaVersion": 1,
             "timeStampEpoch": int(time.time()),
-            "url": self.url,
+            "url": port_url,
             "vessels": [],
         }
-
-class PortDriver:
-    def __init__(self, configuration: dict[str, any]) -> None:
-        self.fresh_dir = configuration["freshDir"]
-
-    def json_writer(self, payload: dict[str, any], vessel_list: list[VesselRecord]) -> None:
+      
         for vessel in vessel_list:
             vessel_dict = vessel.to_dict()
             payload["vessels"].append(vessel_dict)
 
+        return payload
+
+    def json_writer(self, payload: dict[str, any] ) -> None:
         try:
             with open(f"{self.fresh_dir}/{payload['fileName']}", "w") as out_file:
                 json.dump(payload, out_file, indent=4)
         except Exception as error:
             print(error)
 
-    def execute(self, port_url: str, test_flag: bool) -> list[VesselRecord]:
-        raw_html = None
+        return payload
 
-        if test_flag:
-            # read existing html file for testing
-            raw_port_url = "https://www.vesselfinder.com/ports/USSEL001"
-            raw_html_file = "/var/polaris/fresh/f985eb7d-3788-4277-bbbc-8f101288f592.html"
+    def html_reader(self, file_name: str) -> str:
+        try:
+            with open(file_name, "r", encoding="utf-8") as in_file:
+                return in_file.read()
+        except Exception as error:
+            print(error)
+            return ""
 
-            raw_port_url = "https://www.vesselfinder.com/ports/USVLO001"
-            raw_html_file = "/var/polaris/fresh/6c9f657d-a19f-449a-9af7-8b4be5682245.html"
+    def execute(self, stunt: str, arg: str) -> dict[str, any]:
+        parser = PortParser()
+        port_dict = {}
 
-            raw_port_url = "https://www.vesselfinder.com/ports/USPZH001"
-            raw_html_file = "/var/polaris/fresh/1231c64a-2904-4eed-b749-41a4fcd38030.html"
+        if stunt == "file":
+            # file reads raw html from file system, does not write html/json
+            print(f"file stunt: {arg}")
+            raw_html = self.html_reader(arg)
+            vessel_list = parser.parse(raw_html)
+            port_dict = self.json_preamble(vessel_list)
+        elif stunt == "net":
+            # net reads raw html from network, and writes html/json
+            print(f"net stunt: {arg}")
+            scraper = PortScraper(self.fresh_dir)
+            raw_html = scraper.fetch(True)
+            vessel_list = parser.parse(raw_html)
+            port_dict = self.json_preamble(vessel_list)
+            self.json_writer(port_dict)
+        elif stunt == "test":
+            print(f"test stunt: {arg}")
+            raw_html = self.html_reader(arg)
+            vessel_list = parser.parse(raw_html)
+            for vessel in vessel_list:
+                print(vessel.to_dict())
+            port_dict = self.json_preamble(vessel_list)
+        else:
+            print("unknown stunt")
 
-            with open(raw_html_file, "r", encoding="utf-8") as f:
-                raw_html = f.read()
-                scraper = PortScraper(self.fresh_dir, None, raw_port_url)
-                vessel_list = scraper.collection(raw_html)
-                print(vessel_list)
-                return vessel_list
-
-        base_file_name = str(uuid.uuid4())
-        html_file_name = f"{base_file_name}.html"
-        json_file_name = f"{base_file_name}.json"
-        print("base_file_name: ", base_file_name)
-
-        scraper = PortScraper(self.fresh_dir, html_file_name, port_url)
-        vessel_list = scraper.collection(raw_html)
-
-        json_preamble = scraper.json_preamble(json_file_name)
-        self.json_writer(json_preamble, vessel_list)
-        return vessel_list
+        print(f"parse results: {len(port_dict['vessels'])} vessels found")
+        return port_dict
 
 #
+# ports development
 # argv[1] = configuration filename
 #
 if __name__ == "__main__":
@@ -298,8 +330,8 @@ if __name__ == "__main__":
     with open(file_name, "r") as in_file:
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
-            driver = PortDriver(configuration)
-            driver.execute(None, True)
+            driver = PortDriver(configuration['freshDir'])
+            driver.execute("test", "/var/polaris/fresh/f985eb7d-3788-4277-bbbc-8f101288f592.html")
         except yaml.YAMLError as error:
             print(error)
 
