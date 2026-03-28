@@ -11,7 +11,6 @@
 import datetime
 import time
 from sql_table import PolarisLoadLog, PolarisObservation, PolarisPort
-from typing import List, Dict
 
 import sqlalchemy
 from sqlalchemy import and_
@@ -72,20 +71,20 @@ class PostGres:
 
         return candidate
 
-    def load_log_select_all(self) -> list[LoadLog]:
+    def load_log_select_all(self) -> list[PolarisLoadLog]:
         with self.Session() as session:
-            return session.scalars(select(LoadLog)).all()
+            return session.scalars(select(PolarisLoadLog)).all()
 
-    def load_log_select_all_by_date(self, target: datetime.date) -> list[LoadLog]:
+    def load_log_select_all_by_date(self, target: datetime.date) -> list[PolarisLoadLog]:
         with self.Session() as session:
             return session.scalars(
-                select(LoadLog).filter(func.date(LoadLog.file_time) == target)
+                select(PolarisLoadLog).filter(func.date(PolarisLoadLog.file_time) == target)
             ).all()
 
-    def load_log_select_by_file_name(self, file_name: str) -> LoadLog:
+    def load_log_select_by_file_name(self, file_name: str) -> PolarisLoadLog:
         with self.Session() as session:
             return session.scalars(
-                select(LoadLog).filter_by(file_name=file_name)
+                select(PolarisLoadLog).filter_by(file_name=file_name)
             ).first()
 
     def observation_insert(self, args: dict[str, any]) -> PolarisObservation:

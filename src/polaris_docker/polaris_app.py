@@ -7,7 +7,7 @@
 import logging
 import os
 
-from ports import PortDriver, VesselRecord
+from ports import PortDriver, PortParser
 from vessels import VesselDriver, VesselScraper
 
 from sqlalchemy import create_engine
@@ -23,8 +23,8 @@ logger = logging.getLogger("polaris")
 
 class PolarisApp:
 
-    def __init__(self, args: dict[str, any]):
-        self.stunt_box = args['stunt_box']
+    def __init__(self, stunt_box: str):
+        self.stunt_box = stunt_box
 
         self.cooked_dir = "/var/polaris/cooked"
         self.fail_dir = "/var/polaris/failure"
@@ -36,57 +36,69 @@ class PolarisApp:
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
-    def get_port_urls(self) -> List[str]:
-        default_ports = [
-            "USBNC001", "USMRZ001", "USRD4001", "USSEL001", "USCRM001",
-            "USPZH001", "USPBG001", "USANZ001", "USOQY001", "USSAC001",
-            "USSCK001", "USRCH001", "USOAK001", "USSFO001", "USRWC002",
-            "USMY3001", "USFOB001", "USEKA001", "USCEC001", "USVLO001"
-        ]
-
+    def get_port_urls(self) -> list[str]:
+    
         ports_list = self.postgres.port_select_for_scrape()
 
         # TODO if ports list is empty build urls from default ports
         
         return ports_list
 
-    def vessel_collection(self, vessel_list: List[VesselRecord]) -> None:
+    def vessel_collection(self, vessel_list) -> None:
         print(f"vessel collection: {len(vessel_list)} vessels")
 
-        for vessel in vessel_list:
-            print(vessel)
-            print(vessel.vessel_url)
+#        deduplicated_vessels = {}
 
-            vessel_driver = VesselDriver({"freshDir": self.fresh_dir})
-            vessel_driver.execute(vessel.vessel_url, False)
+#        for vessel in vessel_list:
+#            print(vessel)
+#            print(vessel.vessel_url)
+
+#            deduplicated_vessels[vessel.vessel_url] = vessel
+
+#            vessel_driver = VesselDriver({"freshDir": self.fresh_dir})
+#            vessel_driver.execute(vessel.vessel_url, False)
+
+    def port_file(self, port_dict: dict[str, any]) -> None:
+        print(f"port file: {port_dict['fileName']}")
+
+        file_name = port_dict["fileName"]
+        if self.postgres.load_log_select_by_file_name(file_name) is not None:
+            logger.info(f"skipping known file {file_name}")
+            return
+
+    def file_driver(self) -> None:  
+        os.chdir(self.fresh_dir)
+        targets = os.listdir(".")
+        logger.info(f"{len(targets)} files noted")
+
+        for target in targets:
+            if target.endswith(".html"):
+                logger.info(f"processing {target}")
+
+                raw_html_file = os.path.join(self.fresh_dir, target)
+
+                port_driver = PortDriver(self.fresh_dir)
+                port_dict = port_driver.execute("file", raw_html_file)
+                if port_dict['portCode'] != "bogus":
+                    self.port_file(port_dict)
+
+    def net_driver(self) -> None:
+        pass
 
     def execute(self) -> None:
         logger.info(f"polaris execute")
 
-        port_args = {
-            "freshDir": self.fresh_dir,
-        }
-
-        port_driver = PortDriver(port_args)
-
-        port_urls = self.get_port_urls()
-        logger.info(f"port_urls: {len(port_urls)}")
-#        port_urls = ["https://www.vesselfinder.com/ports/USVLO001"]
-#        port_urls = ["https://www.vesselfinder.com/ports/USPZH001"]
-        for url in port_urls:
-            logger.info(f"collecting port data for {url}")
-            vessel_list = port_driver.execute(url, False)
-            self.vessel_collection(vessel_list)
+        if self.stunt_box == "file":
+            self.file_driver()
+        elif self.stunt_box == "net":
+            logger.info(f"stunt box: net")
+            self.net_driver()
 
 if __name__ == "__main__":
-    # stunt_box options: "score" and "validate"
-    args = {
-        "stunt_box":"port_collection"
-    }
+    # stunt_box options: "file" and "net"
+    stunt_box = os.environ.get("stuntbox", "file")
 
-#    stunt_box = os.environ.get("stuntbox", "validate")
-
-    app = PolarisApp(args)
+    app = PolarisApp(stunt_box)
     app.execute()
 
 # ;;; Local Variables: ***

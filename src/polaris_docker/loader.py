@@ -21,7 +21,7 @@ import yaml
 from yaml.loader import SafeLoader
 
 class Loader:
-    def __init__(self) -> None:
+    def __init__(self):
 #        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
 #        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
         self.db_conn = "postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris"
