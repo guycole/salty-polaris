@@ -15,7 +15,7 @@ grant usage, select on sequence polaris_port_id_seq to polaris_client;
 
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USBNC001', 'Benicia',       true, 'https://www.vesselfinder.com/ports/USBNC001');
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USMRZ001', 'Martinez',      true, 'https://www.vesselfinder.com/ports/USMRZ001');
-insert into polaris_port(port_code, port_name, scrape_flag, url) values('USRD4001', 'Roodeo',        true, 'https://www.vesselfinder.com/ports/USRD4001');
+insert into polaris_port(port_code, port_name, scrape_flag, url) values('USRD4001', 'Rodeo',         true, 'https://www.vesselfinder.com/ports/USRD4001');
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USSEL001', 'Selby',         true, 'https://www.vesselfinder.com/ports/USSEL001');
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USCRM001', 'Crockett',      true, 'https://www.vesselfinder.com/ports/USCRM001');
 insert into polaris_port(port_code, port_name, scrape_flag, url) values('USPZH001', 'Port Chicago',  true, 'https://www.vesselfinder.com/ports/USPZH001');

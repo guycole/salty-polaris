@@ -58,8 +58,6 @@ class PostGres:
 #        return candidate
 
     def load_log_insert(self, args: dict[str, any]) -> PolarisLoadLog:
-        args["duration_ms"] = 0
-
         candidate = PolarisLoadLog(args)
 
         try:
@@ -181,6 +179,18 @@ class PostGres:
         except Exception as error:
             print(f"Exception in vessel_insert_or_update: {error}")
             return None
+
+    def vessel_insert(self, args: dict[str, any]) -> PolarisVessel:
+        candidate = PolarisVessel(args)
+
+        try:
+            with self.Session() as session:
+                session.add(candidate)
+                session.commit()
+        except Exception as error:
+            print(error)
+
+        return candidate
 
     def vessel_select_by_imo(self, imo_code: str) -> PolarisVessel:
         with self.Session() as session:

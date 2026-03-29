@@ -31,7 +31,8 @@ class PolarisLoadLog(Base):
     file_type = Column(String)
     load_time = Column(DateTime)
     obs_quantity = Column(Integer)
-    platform = Column(String)
+    host_name = Column(String)
+    port_code = Column(String)
 
     def __init__(self, args: dict[str, any]):
         self.file_name = args["file_name"]
@@ -39,8 +40,9 @@ class PolarisLoadLog(Base):
         self.file_type = args["file_type"]
         self.load_time = datetime.now()
         self.obs_quantity = args["obs_quantity"]
-        self.platform = args["platform"]
-
+        self.host_name = args["host_name"]
+        self.port_code = args["port_code"]
+        
     def __repr__(self):
         return f"load_log({self.file_name} {self.file_time} {self.platform})"
 
@@ -48,26 +50,23 @@ class PolarisObservation(Base):
     __tablename__ = "polaris_observation"
 
     id = Column(Integer, primary_key=True)
+    eta = Column(DateTime)
     imo_code = Column(String)
-    time_stamp = Column(DateTime)
-    course = Column(Float)
-    speed = Column(Float)
-    nav_status = Column(String)
-    dest_code = Column(String)
+    obs_time = Column(DateTime)
+    port_code = Column(String)
     arrival = Column(DateTime)
-    origin_code = Column(String)
     departure = Column(DateTime)
+    in_port = Column(Boolean)
 
     def __init__(self, args: dict[str, any]):
         self.imo_code = args["imo_code"]
-        self.time_stamp = args["time_stamp"]
-        self.course = args["course"]
-        self.speed = args["speed"]
-        self.nav_status = args["nav_status"]
-        self.dest_code = args["dest_code"]
+        self.eta = args["eta"]
+        self.imo_code = args["imo_code"]
+        self.obs_time = args["obs_time"]
+        self.port_code = args["port_code"]
         self.arrival = args["arrival"]
-        self.origin_code = args["origin_code"]
         self.departure = args["departure"]
+        self.in_port = args["in_port"]
 
 class PolarisPort(Base):
     __tablename__ = "polaris_port"
@@ -93,10 +92,10 @@ class PolarisVessel(Base):
     built_year = Column(Integer)
     callsign = Column(String)
     gross_ton = Column(Integer)
+    hot_flag = Column(Boolean)
     imo_code = Column(String)
     length = Column(Integer)
     mmsi_code = Column(String)
-    scrape_flag = Column(Boolean)
     url = Column(String)
     vessel_flag = Column(String)
     vessel_name = Column(String)
@@ -108,10 +107,10 @@ class PolarisVessel(Base):
         self.built_year = args["built_year"]
         self.callsign = args["callsign"]
         self.gross_ton = args["gross_ton"]
+        self.hot_flag = False
         self.imo_code = args["imo_code"]
         self.length = args["length"]
         self.mmsi_code = args["mmsi_code"]
-        self.scrape_flag = False
         self.url = args["url"]
         self.vessel_flag = args["vessel_flag"]
         self.vessel_name = args["vessel_name"]

@@ -2,26 +2,44 @@
 -- Title: polaris_vessel.psql
 -- Description: polaris vessel catalog
 --
+-- ais_type is AIS vessel type, from VesselFinder
+-- beam is vessel width in meters
+-- built_year is vessel construction year
+-- callsign is vessel radio callsign
+-- date_first is first observation date
+-- date_recent is most recent observation date
+-- gross_ton is vessel gross tonnage
+-- hot_flag is true for vessels of interest
+-- imo_code is vessel IMO code
+-- length is vessel length in meters
+-- mmsi_code is vessel MMSI code
+-- url is vessel URL on VesselFinder
+-- vessel_flag is vessel country of registration
+-- vessel_name is vessel name
+-- vessel_type is manually defined, use for reports
+-- note is free-form text field for vessel notes
+--
 create table polaris_vessel (
-  id           bigserial   primary key,
-  ais_type     varchar(32) not null,
-  beam         integer not null,
-  built_year   integer not null,
-  callsign     varchar(24) not null,
-  date_first   date        not null default CURRENT_DATE,
-  date_recent  date        not null default CURRENT_DATE,
-  gross_ton    integer not null,
-  imo_code     varchar(24) unique not null,
-  length       integer not null,
-  mmsi_code    varchar(24) unique not null,
-  scrape_flag  boolean     not null default false,
-  url          varchar(64) not null,
-  vessel_flag  varchar(32) not null,
-  vessel_name  varchar(64) not null,
-  vessel_type  varchar(64) not null default 'Unknown'
+  id           bigserial     primary key,
+  ais_type     varchar(32)   not null,
+  beam         integer       not null,
+  built_year   integer       not null default 1900,
+  callsign     varchar(24)   not null,
+  date_first   date          not null default CURRENT_DATE,
+  date_recent  date          not null default CURRENT_DATE,
+  gross_ton    integer       not null,
+  hot_flag     boolean       not null default false,
+  imo_code     varchar(24)   unique not null,
+  length       integer       not null,
+  mmsi_code    varchar(24)   not null,
+  url          varchar(64)   not null,
+  vessel_flag  varchar(32)   not null,
+  vessel_name  varchar(64)   not null,
+  vessel_type  varchar(64)   not null default 'Unknown',
+  note         varchar(132)  not null default 'No Note'
 );
 
 grant select, insert, update, delete on polaris_vessel to polaris_client;
 grant usage, select on sequence polaris_vessel_id_seq to polaris_client;
 
-insert into polaris_vessel(ais_type, beam, built_year, callsign, gross_ton, imo_code, length, mmsi_code, scrape_flag, url, vessel_flag, vessel_name, vessel_type) values('Passenger ship', 22, 1989, 'WDL2000', 12517, '8834407', 152, '367978000', true, 'https://www.vesselfinder.com/vessels/8834407', 'United States (USA)', 'GOLDEN BEAR', 'Training Ship');
+insert into polaris_vessel(ais_type, beam, built_year, callsign, gross_ton, imo_code, length, mmsi_code, url, vessel_flag, vessel_name, vessel_type) values('Passenger ship', 22, 1989, 'WDL2000', 12517, '8834407', 152, '367978000', 'https://www.vesselfinder.com/vessels/8834407', 'United States (USA)', 'GOLDEN BEAR', 'Training Ship');

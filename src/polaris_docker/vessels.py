@@ -1,4 +1,6 @@
+from ast import arg
 from dataclasses import dataclass
+from html import parser
 import random
 import sys
 import json
@@ -6,6 +8,7 @@ from typing import Optional
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+import socket
 import time
 import uuid
 import logging
@@ -15,32 +18,31 @@ logger = logging.getLogger(__name__)
 import yaml
 from yaml.loader import SafeLoader
 
-
 @dataclass
 class VesselObservation:
     name: str
-    ais_type: Optional[str] = None
-    beam: Optional[str] = None
-    built: Optional[str] = None
-    callsign: Optional[str] = None
-    flag: Optional[str] = None
-    gross_ton: Optional[str] = None
-    imo: Optional[str] = None
-    length: Optional[str] = None
-    mmsi: Optional[str] = None
-    vessel_url: Optional[str] = None
+    ais_type: str
+    beam: str
+    built: str
+    callsign: str
+    flag: str
+    gross_ton: str
+    imo: str
+    length: str
+    mmsi: str
+    vessel_url: str
 
-    course: Optional[str] = None
-    speed: Optional[str] = None
-    navigation_status: Optional[str] = None
+    course: str
+    speed: str
+    navigation_status: str
 
-    destination: Optional[str] = None
-    destination_port_code: Optional[str] = None
-    arrival_date: Optional[str] = None
+    destination: str
+    destination_port_code: str
+    arrival_date: str
 
-    last_port: Optional[str] = None
-    last_port_code: Optional[str] = None
-    departure_date: Optional[str] = None
+    last_port: str
+    last_port_code: str
+    departure_date: str
 
     def __repr__(self) -> str:
         return f"VesselObservation(name={self.name!r}, type={self.ais_type!r}, flag={self.flag!r}, callsign={self.callsign!r})"
@@ -69,47 +71,17 @@ class VesselObservation:
             "departureDate": self.departure_date,
         }
 
+class VesselParser:
 
-class VesselScraper:
-
-    def __init__(self, fresh_dir: str, html_file_name: str, url: str):
-        self.fresh_dir = fresh_dir
-        self.html_file_name = html_file_name
-        self.imo = url.split("/")[-1]
-        self.url = url
-
-        self.headers: Optional[dict] = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Referer": "https://www.vesselfinder.com/",
-            "Connection": "keep-alive",
-        }
-
-        self.timeout: int = 30
-
-
-    def fetch(self, write_flag: bool) -> str:
-        logger.info("fetching %s", self.url)
-
-        # imitate human browsing behavior with random sleep before request
-        time.sleep(random.uniform(3, 10)) 
-        
-        response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
-        response.raise_for_status()
-
-        if write_flag:           
-            with open(f"{self.fresh_dir}/{self.html_file_name}", "w", encoding="utf-8") as f:
-                f.write(response.text)
-
-        return response.text
+    def __init__(self):
+        self.base_url = "https://www.vesselfinder.com"
 
     def parse(self, raw_html: str) -> VesselObservation:
         soup = BeautifulSoup(raw_html, "html.parser")
+
+        # Extract canonical URL for the vessel
+        canonical_link = soup.find("link", rel="canonical")
+        vessel_url = canonical_link["href"].strip() if canonical_link and canonical_link.has_attr("href") else ""
 
         # Helper to get text from a table row by label
         def get_table_value(label: str) -> str:
@@ -262,8 +234,8 @@ class VesselScraper:
                     # Sometimes only ATA is present, use that as fallback
                     departure_date = text.split("ATA:")[1].split(",")[0].strip()
 
-        # Vessel URL (from self.url)
-        vessel_url = self.url
+
+        # vessel_url is now set from canonical link above
 
         return VesselObservation(
             name=name,
@@ -288,68 +260,113 @@ class VesselScraper:
             last_port_code=last_port_code,
         )
 
-    def collection(self, raw_html: str) -> dict[str, any]:
-        if raw_html is None:
-            print("fetching fresh html for collection")
-            raw_html = self.fetch(True)
+class VesselScraper:
+    def __init__(self, fresh_dir: str, url: str):
+        self.fresh_dir = fresh_dir
+        self.url = url
+
+        self.headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": "https://www.vesselfinder.com/",
+            "Connection": "keep-alive",
+        }
+
+        self.timeout: int = 30
+
+    def fetch(self, html_file_name: str, write_flag: bool) -> str:
+        logger.info("fetching %s", self.url)
+
+        # imitate human browsing behavior with random sleep before request
+        time.sleep(random.uniform(5, 25))
+        
+        response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
+        response.raise_for_status()
+
+        if write_flag:           
+            with open(f"{self.fresh_dir}/{html_file_name}", "w", encoding="utf-8") as f:
+                f.write(response.text)
+
+        return response.text
+
+class VesselDriver:
+    def __init__(self, fresh_dir:str):
+        self.fresh_dir = fresh_dir
+
+        base_file_name = str(uuid.uuid4())
+        print("base_file_name: ", base_file_name)
+
+        self.html_file_name = f"{base_file_name}.html"
+        self.json_file_name = f"{base_file_name}.json"
+
+    def html_reader(self, file_name: str) -> str:
+        try:
+            with open(file_name, "r", encoding="utf-8") as in_file:
+                return in_file.read()
+        except Exception as error:
+            print(error)
+            return ""
+
+    def json_preamble(self, obs:VesselObservation) -> dict[str, any]:
+        if obs.imo is None or obs.imo == "":
+            imo_code = obs.vessel_url.split("/")[-1]
         else:
-            print("Using saved HTML for collection")
+            imo_code = obs.imo
 
-        results = self.parse(raw_html).to_dict()
-        return results
-
-    def json_preamble(self, json_file_name: str) -> dict[str, any]:
-        return {
+        payload = {
             "application": "polaris-vessels-v1",
-            "fileName": json_file_name,
+            "fileName": self.json_file_name,
+            "hostName": socket.gethostname(),
+            "imoCode": imo_code,
             "schemaVersion": 1,
             "timeStampEpoch": int(time.time()),
-            "url": self.url,
-            "observation": {},
+            "url": obs.vessel_url,
+            "observation": obs.to_dict(),
         }
-    
-class VesselDriver:
-    def __init__(self, configuration: dict[str, any]):
-        self.fresh_dir = configuration["freshDir"]
 
-    def json_writer(self, payload: dict[str, any], observation: dict[str, any]) -> None:
-        payload["observation"] = observation
+        return payload
 
+    def json_writer(self, payload: dict[str, any]) -> None:
         try:
-            with open(f"{self.fresh_dir}/{payload['fileName']}", "w") as out_file:
+            with open(f"{self.fresh_dir}/{self.json_file_name}", "w") as out_file:
                 json.dump(payload, out_file, indent=4)
         except Exception as error:
             print(error)
 
-    def execute(self, vessel_url: str, test_flag: bool) -> dict[str, any]:
-        raw_html = None
+    def execute(self, stunt: str, arg: str) -> dict[str, any]:
+        parser = VesselParser()
+        obs_dict = {}
 
-        if test_flag:
-            # Polaris Voyager
-            raw_html_file = "/var/polaris/fresh/8949c14b-3278-4a57-92f7-92b121a871b3.html"
-            raw_vessel_url = "https://www.vesselfinder.com/vessels/details/9665748"
+        if stunt == "file":
+            # file reads raw html from file system, does not write html/json
+            print(f"file stunt: {arg}")
+            raw_html = self.html_reader(arg)
+            obs = parser.parse(raw_html)
+            obs_dict = self.json_preamble(obs)
+        elif stunt == "net":
+            # net reads raw html from network, and writes html/json
+            print(f"net stunt: {arg}")
+            scraper = VesselScraper(self.fresh_dir, arg)
+            raw_html = scraper.fetch(self.html_file_name, True)
+            obs = parser.parse(raw_html)
+            obs_dict = self.json_preamble(obs)
+            self.json_writer(obs_dict)
+        elif stunt == "test":
+            print(f"test stunt: {arg}")
+            raw_html = self.html_reader(arg)
+            obs = parser.parse(raw_html)
+        else:
+            print("unknown stunt")
 
-            with open(raw_html_file, "r", encoding="utf-8") as f:
-                raw_html = f.read()
-
-                scraper = VesselScraper(self.fresh_dir, None, raw_vessel_url)
-                observation = scraper.collection(raw_html)
-                print(observation)
-                return observation
-
-        base_file_name = str(uuid.uuid4())
-        html_file_name = f"{base_file_name}.html"
-        json_file_name = f"{base_file_name}.json"
-        print("base_file_name: ", base_file_name)
-
-        scraper = VesselScraper(self.fresh_dir, html_file_name, vessel_url)
-        observation = scraper.collection(raw_html)
-
-        json_preamble = scraper.json_preamble(json_file_name)
-        self.json_writer(json_preamble, observation)
-        return observation
+        return obs_dict
 
 #
+# vessels development
 # argv[1] = configuration filename
 #
 if __name__ == "__main__":
@@ -361,8 +378,9 @@ if __name__ == "__main__":
     with open(file_name, "r") as in_file:
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
-            driver = VesselDriver(configuration)
-            driver.execute(None, True)
+            driver = VesselDriver(configuration['freshDir'])
+#            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
+            driver.execute("net", "https://www.vesselfinder.com/vessels/details/9960215")
         except yaml.YAMLError as error:
             print(error)
 

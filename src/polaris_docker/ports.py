@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import requests
+import socket
 import sys
 import time
 import uuid
@@ -31,7 +32,7 @@ class VesselRecord:
     flag: str 
     arrival: str
     departure: str
-    built: str = "0"
+    built: str = "1900"
     size: str = "0"
     gross_ton: str = "0"
     in_port: bool = False
@@ -48,9 +49,10 @@ class VesselRecord:
             "flag": self.flag,
             "size": 0 if len(self.size) < 2 else self.size,
             "grossTon": 0 if len(self.gross_ton) < 2 else int(self.gross_ton),
-            "built": 0 if len(self.built) < 2 else int(self.built),
+            "built": 1900 if len(self.built) < 2 else int(self.built),
             "arrival": self.arrival,
             "departure": self.departure,
+            "inPort": self.in_port,
         } 
 
 class PortParser:
@@ -108,18 +110,19 @@ class PortParser:
             return flag_div.text.strip() if flag_div.text.strip() else ""
 
         def parse_table_section(section_key, date_field, in_port_flag):
-            # Find the correct table by matching the heading text before the table
-            section_titles = {
-                "arrivals": "Recent ship arrivals in Selby",
-                "departures": "Recent ship departures from Selby",
-                "expected": "Expected ships in Selby",
+            # Dynamically match the section title for any port
+            section_patterns = {
+                "arrivals": "Recent ship arrivals in ",
+                "departures": "Recent ship departures from ",
+                "expected": "Expected ships in ",
                 "in-port": "Ships in port",
             }
-            expected_title = section_titles[section_key]
+            pattern = section_patterns[section_key]
             table = None
             for h2 in soup.find_all("h2", class_="tab-content-title"):
-                if h2.text.strip() == expected_title:
-                    # The next table after this heading is the one we want
+                h2_text = h2.text.strip()
+                if (section_key == "in-port" and h2_text == pattern) or \
+                   (section_key != "in-port" and h2_text.startswith(pattern)):
                     sib = h2
                     while sib is not None:
                         sib = sib.find_next_sibling()
@@ -192,13 +195,9 @@ class PortParser:
 
 class PortScraper:
 
-    def __init__(self, fresh_dir: str):
+    def __init__(self, fresh_dir: str, url: str):
         self.fresh_dir = fresh_dir
-
-        self.base_file_name = str(uuid.uuid4())
-        self.html_file_name = f"{self.base_file_name}.html"
-        self.json_file_name = f"{self.base_file_name}.json"
-        print("base_file_name: ", self.base_file_name)
+        self.url = url
 
         self.headers = {
             "User-Agent": (
@@ -214,17 +213,17 @@ class PortScraper:
 
         self.timeout: int = 30
 
-    def fetch(self, write_flag: bool) -> str:
+    def fetch(self, html_file_name: str, write_flag: bool) -> str:
         logger.info("fetching %s", self.url)
 
         # imitate human browsing behavior with random sleep before request
-        time.sleep(random.uniform(3, 10)) 
+        time.sleep(random.uniform(5, 25))
 
         response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
 
         if write_flag:
-            with open(f"{self.fresh_dir}/{self.html_file_name}", "w", encoding="utf-8") as f:
+            with open(f"{self.fresh_dir}/{html_file_name}", "w", encoding="utf-8") as f:
                 f.write(response.text)
 
         return response.text
@@ -233,10 +232,10 @@ class PortDriver:
     def __init__(self, fresh_dir: str):
         self.fresh_dir = fresh_dir
 
-        self.base_file_name = str(uuid.uuid4())
-        self.html_file_name = f"{self.base_file_name}.html"
-        self.json_file_name = f"{self.base_file_name}.json"
-        print("base_file_name: ", self.base_file_name)
+        base_file_name = str(uuid.uuid4())
+#        print("base_file_name: ", base_file_name)
+        self.html_file_name = f"{base_file_name}.html"
+        self.json_file_name = f"{base_file_name}.json"
 
     def json_preamble(self, vessel_list: list[VesselRecord]) -> dict[str, any]:
         if len(vessel_list) < 1:
@@ -256,6 +255,7 @@ class PortDriver:
         payload = {
             "application": "polaris-ports-v1",
             "fileName": self.json_file_name,
+            "hostName": socket.gethostname(),
             "portCode": port_code,
             "schemaVersion": 1,
             "timeStampEpoch": int(time.time()),
@@ -271,12 +271,10 @@ class PortDriver:
 
     def json_writer(self, payload: dict[str, any] ) -> None:
         try:
-            with open(f"{self.fresh_dir}/{payload['fileName']}", "w") as out_file:
+            with open(f"{self.fresh_dir}/{self.json_file_name}", "w") as out_file:
                 json.dump(payload, out_file, indent=4)
         except Exception as error:
             print(error)
-
-        return payload
 
     def html_reader(self, file_name: str) -> str:
         try:
@@ -298,9 +296,9 @@ class PortDriver:
             port_dict = self.json_preamble(vessel_list)
         elif stunt == "net":
             # net reads raw html from network, and writes html/json
-            print(f"net stunt: {arg}")
-            scraper = PortScraper(self.fresh_dir)
-            raw_html = scraper.fetch(True)
+            # print(f"net stunt: {arg}")
+            scraper = PortScraper(self.fresh_dir, arg)
+            raw_html = scraper.fetch(self.html_file_name, True)
             vessel_list = parser.parse(raw_html)
             port_dict = self.json_preamble(vessel_list)
             self.json_writer(port_dict)
@@ -314,7 +312,7 @@ class PortDriver:
         else:
             print("unknown stunt")
 
-        print(f"parse results: {len(port_dict['vessels'])} vessels found")
+        # print(f"parse results: {len(port_dict['vessels'])} vessels found")
         return port_dict
 
 #
@@ -331,7 +329,8 @@ if __name__ == "__main__":
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = PortDriver(configuration['freshDir'])
-            driver.execute("test", "/var/polaris/fresh/f985eb7d-3788-4277-bbbc-8f101288f592.html")
+#            driver.execute("test", "/var/polaris/fresh/da5ffb32-630f-4e9e-a053-81e5c77de1ca.html")
+            driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
         except yaml.YAMLError as error:
             print(error)
 
