@@ -24,6 +24,7 @@ from sql_table import (
     PolarisVessel,
 )
 
+
 class PostGres:
     db_engine = None
     Session = None
@@ -31,31 +32,31 @@ class PostGres:
     def __init__(self, session: sqlalchemy.orm.session.sessionmaker):
         self.Session = session
 
-#    def daily_score_insert_or_update(self, args: dict[str, any]) -> DailyScore:
-#        candidate = DailyScore(args)
-#
-#        try:
-#            with self.Session() as session:
-#                existing = session.scalars(
-#                    select(DailyScore).filter(
-#                        and_(
-#                            DailyScore.score_date == candidate.score_date,
-#                            DailyScore.platform == candidate.platform,
-#                        )
-#                    )
-#                ).first()
-#
-#                if existing is None:
-#                    session.add(candidate)
-#                else:
-#                    existing.file_quantity = candidate.file_quantity
-#                    existing.obs_quantity = candidate.obs_quantity
-#
-#                session.commit()
-#        except Exception as error:
-#            print(error)
-#
-#        return candidate
+    #    def daily_score_insert_or_update(self, args: dict[str, any]) -> DailyScore:
+    #        candidate = DailyScore(args)
+    #
+    #        try:
+    #            with self.Session() as session:
+    #                existing = session.scalars(
+    #                    select(DailyScore).filter(
+    #                        and_(
+    #                            DailyScore.score_date == candidate.score_date,
+    #                            DailyScore.platform == candidate.platform,
+    #                        )
+    #                    )
+    #                ).first()
+    #
+    #                if existing is None:
+    #                    session.add(candidate)
+    #                else:
+    #                    existing.file_quantity = candidate.file_quantity
+    #                    existing.obs_quantity = candidate.obs_quantity
+    #
+    #                session.commit()
+    #        except Exception as error:
+    #            print(error)
+    #
+    #        return candidate
 
     def load_log_insert(self, args: dict[str, any]) -> PolarisLoadLog:
         candidate = PolarisLoadLog(args)
@@ -73,10 +74,14 @@ class PostGres:
         with self.Session() as session:
             return session.scalars(select(PolarisLoadLog)).all()
 
-    def load_log_select_all_by_date(self, target: datetime.date) -> list[PolarisLoadLog]:
+    def load_log_select_all_by_date(
+        self, target: datetime.date
+    ) -> list[PolarisLoadLog]:
         with self.Session() as session:
             return session.scalars(
-                select(PolarisLoadLog).filter(func.date(PolarisLoadLog.file_time) == target)
+                select(PolarisLoadLog).filter(
+                    func.date(PolarisLoadLog.file_time) == target
+                )
             ).all()
 
     def load_log_select_by_file_name(self, file_name: str) -> PolarisLoadLog:
@@ -103,9 +108,12 @@ class PostGres:
         Returns a list of URLs.
         """
         with self.Session() as session:
-            return [row.url for row in session.scalars(
-                select(PolarisPort).filter_by(scrape_flag=True)
-            ).all()]
+            return [
+                row.url
+                for row in session.scalars(
+                    select(PolarisPort).filter_by(scrape_flag=True)
+                ).all()
+            ]
 
     def vessel_insert(self, args: dict[str, any]) -> PolarisVessel:
         candidate = PolarisVessel(args)
@@ -125,14 +133,14 @@ class PostGres:
             print(f"DB engine: {self.db_engine}")
 
             print("xxxxxxxxxxxxxx")
-            print(args['observation']['imo'])
-            if args['observation']['imo'] is None:
+            print(args["observation"]["imo"])
+            if args["observation"]["imo"] is None:
                 print("IMO code is None, cannot insert or update vessel")
                 return None
-            
+
             with self.Session() as session:
                 print(f"Session instance: {session}")
-                obs = args['observation']
+                obs = args["observation"]
                 print(f"Observation: {obs}")
                 existing = session.scalars(
                     select(PolarisVessel).filter(PolarisVessel.imo_code == obs["imo"])
@@ -140,19 +148,21 @@ class PostGres:
 
                 if existing is None:
                     print("creating new vessel")
-                    candidate = PolarisVessel({
-                        "ais_type": obs["aisType"],
-                        "beam": obs["beam"],
-                        "built_year": obs["built"],
-                        "callsign": obs["callsign"],
-                        "gross_ton": obs["grossTon"],
-                        "imo_code": obs["imo"],
-                        "length": obs["length"],
-                        "mmsi_code": obs["mmsi"],
-                        "url": obs["vesselUrl"],
-                        "vessel_flag": obs["flag"],
-                        "vessel_name": obs["name"],
-                    })
+                    candidate = PolarisVessel(
+                        {
+                            "ais_type": obs["aisType"],
+                            "beam": obs["beam"],
+                            "built_year": obs["built"],
+                            "callsign": obs["callsign"],
+                            "gross_ton": obs["grossTon"],
+                            "imo_code": obs["imo"],
+                            "length": obs["length"],
+                            "mmsi_code": obs["mmsi"],
+                            "url": obs["vesselUrl"],
+                            "vessel_flag": obs["flag"],
+                            "vessel_name": obs["name"],
+                        }
+                    )
                     session.add(candidate)
                 else:
                     print("updating existing vessel")
@@ -172,7 +182,9 @@ class PostGres:
                 print("commit successful")
                 # Return the up-to-date vessel from the DB
                 vessel = session.scalars(
-                    select(PolarisVessel).filter(PolarisVessel.imo_code == obs["imo_code"])
+                    select(PolarisVessel).filter(
+                        PolarisVessel.imo_code == obs["imo_code"]
+                    )
                 ).first()
                 print(f"Returned vessel: {vessel}")
                 return vessel
@@ -197,6 +209,7 @@ class PostGres:
             return session.scalars(
                 select(PolarisVessel).filter_by(imo_code=imo_code)
             ).first()
+
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***

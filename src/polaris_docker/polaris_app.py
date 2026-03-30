@@ -20,6 +20,7 @@ from postgres import PostGres
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("polaris")
 
+
 class PolarisApp:
 
     def __init__(self, stunt_box: str):
@@ -29,12 +30,18 @@ class PolarisApp:
         self.failure_dir = "/var/polaris/failure"
         self.fresh_dir = "/var/polaris/fresh"
 
+        self.success_dir = "/mnt/polaris/success"
+        self.failure_dir = "/mnt/polaris/failure"
+        self.fresh_dir = "/mnt/polaris/fresh"
+
         self.failure = 0
         self.success = 0
 
-#        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
-#        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
-        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris"
+        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
+        # self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
+        # self.db_conn = (
+        #    "postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris"
+        # )
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
@@ -45,15 +52,15 @@ class PolarisApp:
         os.rename(file_name, self.failure_dir + "/" + file_name)
 
     def file_success(self, file_name: str):
-#        logger.info(f"file success:{file_name}")
+        #        logger.info(f"file success:{file_name}")
 
         self.success += 1
         os.rename(file_name, self.success_dir + "/" + file_name)
 
     def get_port_urls(self) -> list[str]:
-        ports_list = self.postgres.port_select_for_scrape()  
+        ports_list = self.postgres.port_select_for_scrape()
         return ports_list
-    
+
     def json_reader(self, file_name: str) -> dict[str, any]:
         results = {}
 
@@ -64,7 +71,7 @@ class PolarisApp:
             logger.error(f"json read error for {file_name}: {error}")
 
         return results
-    
+
     def port_datetime(self, arg: str) -> datetime.datetime:
         """
         Convert a string like 'Apr 14, 02:00' to a datetime with the current year.
@@ -76,22 +83,26 @@ class PolarisApp:
             # Use current year
             this_year = datetime.datetime.utcnow().year
             # Example: 'Apr 14, 02:00' -> 'Apr 14 2026 02:00'
-            dt = datetime.datetime.strptime(f"{arg.strip()} {this_year}", "%b %d, %H:%M %Y")
+            dt = datetime.datetime.strptime(
+                f"{arg.strip()} {this_year}", "%b %d, %H:%M %Y"
+            )
             return dt
         except Exception as e:
             logger.warning(f"Could not parse port datetime from '{arg}': {e}")
             return None
-    
+
     def port_load_log_insert(self, json_dict: dict[str, any]) -> None:
         if "hostName" not in json_dict:
             json_dict["hostName"] = "unknown"
 
         # Convert epoch seconds to ISO 8601 timestamp string with UTC timezone for Postgres
         file_time_epoch = json_dict["timeStampEpoch"]
-        file_time = datetime.datetime.fromtimestamp(file_time_epoch, tz=datetime.timezone.utc).isoformat(sep=" ", timespec="seconds")
+        file_time = datetime.datetime.fromtimestamp(
+            file_time_epoch, tz=datetime.timezone.utc
+        ).isoformat(sep=" ", timespec="seconds")
         # Ensure 'Z' suffix for UTC (Postgres compatible)
-        if file_time.endswith('+00:00'):
-            file_time = file_time[:-6] + 'Z'
+        if file_time.endswith("+00:00"):
+            file_time = file_time[:-6] + "Z"
 
         args = {
             "file_name": json_dict["fileName"],
@@ -105,9 +116,9 @@ class PolarisApp:
         self.postgres.load_log_insert(args)
 
     def port_observation(self, vessel_dict: dict[str, any]) -> None:
-        imo_code = vessel_dict['vesselUrl'].split("/")[-1]
-        port_code = vessel_dict['portUrl'].split("/")[-1]
-       
+        imo_code = vessel_dict["vesselUrl"].split("/")[-1]
+        port_code = vessel_dict["portUrl"].split("/")[-1]
+
         args = {
             "eta": self.port_datetime(""),
             "imo_code": imo_code,
@@ -140,7 +151,7 @@ class PolarisApp:
             selected = self.postgres.vessel_select_by_imo(imo)
             if selected is None:
                 vessel_request[imo] = vessel["vesselUrl"]
-            else:            
+            else:
                 self.port_observation(vessel)
 
         self.port_load_log_insert(json_dict)
@@ -148,7 +159,9 @@ class PolarisApp:
         logger.info(f"missing vessels: {len(vessel_request)} vessels requested")
 
     def port_v1_net(self, json_dict: dict[str, any]) -> None:
-        logger.info(f"port v1 net: {json_dict['portCode']}")
+        logger.info(
+            f"port v1 net: {json_dict['portCode']} {len(json_dict['vessels'])} vessels"
+        )
 
         vessel_request = {}
 
@@ -157,7 +170,7 @@ class PolarisApp:
             selected = self.postgres.vessel_select_by_imo(imo)
             if selected is None:
                 vessel_request[imo] = vessel["vesselUrl"]
-            else:            
+            else:
                 self.port_observation(vessel)
 
         self.port_load_log_insert(json_dict)
@@ -171,7 +184,7 @@ class PolarisApp:
             self.vessel_v1_insert(vessel_dict)
 
     def vessel_v1_insert(self, vessel_dict: dict[str, any]) -> None:
-        imo_code = vessel_dict['url'].split("/")[-1]
+        imo_code = vessel_dict["url"].split("/")[-1]
 
         selected = self.postgres.vessel_select_by_imo(imo_code)
         if selected is None:
@@ -223,33 +236,31 @@ class PolarisApp:
 
                 if "application" not in json_dict:
                     self.file_failure(target)
-                    continue
-
-                if json_dict["application"] == "polaris-vessels-v1":
+                elif json_dict["application"] == "polaris-vessels-v1":
                     self.vessel_v1_insert(json_dict)
                     self.file_success(target)
             else:
                 logger.warning(f"unknown file type: {target}")
                 self.file_failure(target)
 
-            targets = os.listdir(".")
-            logger.info(f"{len(targets)} port files noted")
-            for target in targets:
-                json_dict = self.json_reader(target)
+        targets = os.listdir(".")
+        logger.info(f"{len(targets)} port files noted")
+        for target in targets:
+            json_dict = self.json_reader(target)
 
-                if "application" not in json_dict:
-                    self.file_failure(target)
-                    continue
+            if "application" not in json_dict:
+                self.file_failure(target)
+                continue
 
-                if json_dict["application"] == "polaris-ports-v1":
-                    if "fileName" in json_dict:
-                        self.port_v1_file(json_dict)
-                        self.file_success(target)
-                    else:
-                        self.file_failure(target)
+            if json_dict["application"] == "polaris-ports-v1":
+                if "fileName" in json_dict:
+                    self.port_v1_file(json_dict)
+                    self.file_success(target)
                 else:
-                    logger.warning(f"unknown file type: {target}")
                     self.file_failure(target)
+            else:
+                logger.warning(f"unknown file type: {target}")
+                self.file_failure(target)
 
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
@@ -270,9 +281,10 @@ class PolarisApp:
             logger.info(f"stunt box: net")
             self.net_driver()
 
+
 if __name__ == "__main__":
     # stunt_box options: "file" and "net"
-    stunt_box = os.environ.get("stuntbox", "file")
+    stunt_box = os.environ.get("stuntbox", "net")
 
     app = PolarisApp(stunt_box)
     app.execute()
