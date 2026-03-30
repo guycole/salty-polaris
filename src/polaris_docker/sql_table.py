@@ -4,7 +4,7 @@
 # Development Environment: Ubuntu 22.04.5 LTS/python 3.10.12
 # Author: G.S. Cole (guycole at gmail dot com)
 #
-#from concurrent.interpreters import create
+# from concurrent.interpreters import create
 from datetime import datetime
 
 from sqlalchemy import Column
@@ -19,6 +19,7 @@ mapper_registry = registry()
 
 class Base(DeclarativeBase):
     pass
+
 
 class PolarisLoadLog(Base):
     """load_log table definition"""
@@ -42,9 +43,10 @@ class PolarisLoadLog(Base):
         self.obs_quantity = args["obs_quantity"]
         self.host_name = args["host_name"]
         self.port_code = args["port_code"]
-        
+
     def __repr__(self):
         return f"load_log({self.file_name} {self.file_time} {self.platform})"
+
 
 class PolarisObservation(Base):
     __tablename__ = "polaris_observation"
@@ -68,6 +70,7 @@ class PolarisObservation(Base):
         self.departure = args["departure"]
         self.in_port = args["in_port"]
 
+
 class PolarisPort(Base):
     __tablename__ = "polaris_port"
 
@@ -82,6 +85,7 @@ class PolarisPort(Base):
         self.port_name = args["port_name"]
         self.scrape_flag = args["scrape_flag"]
         self.url = args["url"]
+
 
 class PolarisVessel(Base):
     __tablename__ = "polaris_vessel"

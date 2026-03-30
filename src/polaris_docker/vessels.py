@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 import yaml
 from yaml.loader import SafeLoader
 
+
 @dataclass
 class VesselObservation:
     name: str
@@ -71,6 +72,7 @@ class VesselObservation:
             "departureDate": self.departure_date,
         }
 
+
 class VesselParser:
 
     def __init__(self):
@@ -81,7 +83,11 @@ class VesselParser:
 
         # Extract canonical URL for the vessel
         canonical_link = soup.find("link", rel="canonical")
-        vessel_url = canonical_link["href"].strip() if canonical_link and canonical_link.has_attr("href") else ""
+        vessel_url = (
+            canonical_link["href"].strip()
+            if canonical_link and canonical_link.has_attr("href")
+            else ""
+        )
 
         # Helper to get text from a table row by label
         def get_table_value(label: str) -> str:
@@ -202,7 +208,6 @@ class VesselParser:
                     # Extract just the date part after 'ETA:'
                     arrival_date = eta_text.split("ETA:")[1].split(",")[0].strip()
 
-
         # Arrival date (from "ATA" in Voyage Data)
         arrival_date = None
         ata_span = soup.find("span", class_="_mcol12")
@@ -219,7 +224,6 @@ class VesselParser:
                 if last_port_a.has_attr("href"):
                     last_port_code = last_port_a["href"].split("/")[-1]
 
-
         # Departure date (from "Last Port" and "ATA"/"ATD" in Voyage Data)
         departure_date = None
         last_port_div = soup.find("div", class_="vilabel", string="Last Port")
@@ -233,7 +237,6 @@ class VesselParser:
                 elif "ATA:" in text:
                     # Sometimes only ATA is present, use that as fallback
                     departure_date = text.split("ATA:")[1].split(",")[0].strip()
-
 
         # vessel_url is now set from canonical link above
 
@@ -260,6 +263,7 @@ class VesselParser:
             last_port_code=last_port_code,
         )
 
+
 class VesselScraper:
     def __init__(self, fresh_dir: str, url: str):
         self.fresh_dir = fresh_dir
@@ -284,22 +288,23 @@ class VesselScraper:
 
         # imitate human browsing behavior with random sleep before request
         time.sleep(random.uniform(5, 25))
-        
+
         response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
 
-        if write_flag:           
+        if write_flag:
             with open(f"{self.fresh_dir}/{html_file_name}", "w", encoding="utf-8") as f:
                 f.write(response.text)
 
         return response.text
 
+
 class VesselDriver:
-    def __init__(self, fresh_dir:str):
+    def __init__(self, fresh_dir: str):
         self.fresh_dir = fresh_dir
 
         base_file_name = str(uuid.uuid4())
-        print("base_file_name: ", base_file_name)
+        # print("base_file_name: ", base_file_name)
 
         self.html_file_name = f"{base_file_name}.html"
         self.json_file_name = f"{base_file_name}.json"
@@ -312,7 +317,7 @@ class VesselDriver:
             print(error)
             return ""
 
-    def json_preamble(self, obs:VesselObservation) -> dict[str, any]:
+    def json_preamble(self, obs: VesselObservation) -> dict[str, any]:
         if obs.imo is None or obs.imo == "":
             imo_code = obs.vessel_url.split("/")[-1]
         else:
@@ -350,7 +355,7 @@ class VesselDriver:
             obs_dict = self.json_preamble(obs)
         elif stunt == "net":
             # net reads raw html from network, and writes html/json
-            print(f"net stunt: {arg}")
+            # print(f"net stunt: {arg}")
             scraper = VesselScraper(self.fresh_dir, arg)
             raw_html = scraper.fetch(self.html_file_name, True)
             obs = parser.parse(raw_html)
@@ -365,6 +370,7 @@ class VesselDriver:
 
         return obs_dict
 
+
 #
 # vessels development
 # argv[1] = configuration filename
@@ -378,9 +384,11 @@ if __name__ == "__main__":
     with open(file_name, "r") as in_file:
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
-            driver = VesselDriver(configuration['freshDir'])
-#            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
-            driver.execute("net", "https://www.vesselfinder.com/vessels/details/9960215")
+            driver = VesselDriver(configuration["freshDir"])
+            #            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
+            driver.execute(
+                "net", "https://www.vesselfinder.com/vessels/details/9960215"
+            )
         except yaml.YAMLError as error:
             print(error)
 
