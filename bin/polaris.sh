@@ -7,7 +7,7 @@
 #
 # * * * * * /home/gsc/Documents/github/salty-polaris/bin/polaris.sh > /dev/null 2>&1
 #
-PATH=/bin:/usr/bin:/etc:/usr/local/bin; export PATH
+PATH=/bin:/usr/bin:/etc:/usr/local/bin:$HOME/.docker/bin; export PATH
 #LD_LIBRARY_PATH=/usr/local/lib/arm-linux-gnueabihf; export LD_LIBRARY_PATH
 #
 echo "start polaris collection"
