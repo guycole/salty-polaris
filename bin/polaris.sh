@@ -12,6 +12,6 @@ PATH=/bin:/usr/bin:/etc:/usr/local/bin:$HOME/.docker/bin; export PATH
 #
 echo "start polaris collection"
 docker rm polaris
-docker run -v /var/polaris:/mnt/polaris --name polaris porlaris:latest
+docker run -v /var/polaris:/mnt/polaris --name polaris polaris:latest
 echo "end polaris collection"
 #

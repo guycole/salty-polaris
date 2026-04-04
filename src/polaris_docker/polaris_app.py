@@ -38,10 +38,8 @@ class PolarisApp:
         self.success = 0
 
         self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
-        # self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
-        # self.db_conn = (
-        #    "postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris"
-        # )
+        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
+#        self.db_conn = ("postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris")
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
@@ -201,6 +199,9 @@ class PolarisApp:
                 "vessel_flag": vessel_dict["observation"]["flag"],
                 "vessel_name": vessel_dict["observation"]["name"],
             }
+
+            if args["ais_type"] is None or args["ais_type"] == "":
+                args["ais_type"] = "Unknown"
 
             if args["beam"] is None or args["beam"] == "":
                 args["beam"] = 0
