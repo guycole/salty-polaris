@@ -365,8 +365,8 @@ if __name__ == "__main__":
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = PortDriver(configuration["freshDir"])
-            #            driver.execute("test", "/var/polaris/fresh/da5ffb32-630f-4e9e-a053-81e5c77de1ca.html")
-            driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
+            driver.execute("test", "/var/polaris/fresh/fa94efb1-8d06-4aed-b5a8-f1e6ea635f49.html")
+            #driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
         except yaml.YAMLError as error:
             print(error)
 
