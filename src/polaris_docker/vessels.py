@@ -387,7 +387,7 @@ if __name__ == "__main__":
             driver = VesselDriver(configuration["freshDir"])
             #            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
             driver.execute(
-                "net", "https://www.vesselfinder.com/vessels/details/9960215"
+                "net", "https://www.vesselfinder.com/vessels/details/9382982"
             )
         except yaml.YAMLError as error:
             print(error)

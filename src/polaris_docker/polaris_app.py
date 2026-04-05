@@ -30,16 +30,16 @@ class PolarisApp:
         self.failure_dir = "/var/polaris/failure"
         self.fresh_dir = "/var/polaris/fresh"
 
-        self.success_dir = "/mnt/polaris/success"
-        self.failure_dir = "/mnt/polaris/failure"
-        self.fresh_dir = "/mnt/polaris/fresh"
+#        self.success_dir = "/mnt/polaris/success"
+#        self.failure_dir = "/mnt/polaris/failure"
+#        self.fresh_dir = "/mnt/polaris/fresh"
 
         self.failure = 0
         self.success = 0
 
         self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
         self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
-#        self.db_conn = ("postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris")
+        self.db_conn = ("postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris")
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
@@ -266,9 +266,9 @@ class PolarisApp:
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
         ports_urls = self.get_port_urls()
+        ports_urls = ["https://www.vesselfinder.com/ports/USRCH001"]
         for port_url in ports_urls:
             logger.info(f"processing {port_url}")
-
             port_driver = PortDriver(self.fresh_dir)
             port_dict = port_driver.execute("net", port_url)
             self.port_v1_net(port_dict)

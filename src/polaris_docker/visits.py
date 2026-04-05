@@ -1,7 +1,3 @@
-"""
-scraper for port pages.
-"""
-
 import json
 import logging
 import os
@@ -365,7 +361,7 @@ if __name__ == "__main__":
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = PortDriver(configuration["freshDir"])
-            driver.execute("test", "/var/polaris/fresh/fe6fc898-eb55-4be1-b572-85a68fc24fc4.html")
+            driver.execute("test", "/var/polaris/fresh/fa94efb1-8d06-4aed-b5a8-f1e6ea635f49.html")
             #driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
         except yaml.YAMLError as error:
             print(error)

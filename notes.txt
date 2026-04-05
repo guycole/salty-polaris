@@ -10,3 +10,12 @@ myshiptracking.com USMRZ (depart 2026-2-24) to USMRZ (eta 2026-4-4) now underway
 shipnext.com USMRZ (eta 25-3-2026)
 vesselfinder.com USSFO (depart 2026-4-4) to USMRZ (eta 2026-3-8) now underway
 
+if gross_ton > 10000 and in port flag true
+  check polaris_visit
+    create polaris_visit row if needed
+      add last port 
+
+if gross_ton > 10000 and in port flag false
+  check polaris_visit
+    if row not exist, then ship not yet arrived
+    if row does exist, then ship has departed

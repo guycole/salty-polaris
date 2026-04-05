@@ -1,0 +1,2 @@
+  504  apt install -y chromium-driver
+  505  apt-get install chromium-shell

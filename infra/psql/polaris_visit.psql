@@ -1,24 +1,25 @@
 --
 -- Title: polaris_visit.psql
--- Description: polaris visits
+-- Description: port visit summary
 --
--- eta is estimated time of arrival as reported by VesselFinders
--- imo_code is ship 
--- port_code is port
--- arrival is arrival time
--- departure is departure time
--- obs_time is collection time
+-- date_arrival at locode_current 
+-- date_departure from locode_current
+-- imo_code for vessel
+-- in_port is true if vessel currently in locode_current
+-- locode_current is current port
+-- locode_destination is next port
+-- locode_last is previous port
 --
-create table polaris_observation (
-  id         bigserial    primary key,
-  eta        timestamp    not null,
-  imo_code   varchar(24)  not null,
-  obs_time   timestamp    not null,
-  port_code  varchar(24)  not null,
-  arrival    timestamp    not null,
-  departure  timestamp    not null,
-  in_port    boolean      not null default false
+create table polaris_visit (
+  id                  bigserial    primary key,
+  date_arrival        date         not null,
+  date_departure      date         not null,
+  imo_code            varchar(24)  not null,
+  in_port             boolean      not null default false,
+  locode_current      varchar(24)  not null,
+  locode_destination  varchar(24)  not null,
+  locode_last         varchar(24)  not null
 );
 
-grant select, insert, update, delete on polaris_observation to polaris_client;
-grant usage, select on sequence polaris_observation_id_seq to polaris_client;
+grant select, insert, update, delete on polaris_visit to polaris_client;
+grant usage, select on sequence polaris_visit_id_seq to polaris_client;
