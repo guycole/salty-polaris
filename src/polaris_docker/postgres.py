@@ -22,8 +22,8 @@ from sql_table import (
     PolarisObservation,
     PolarisPort,
     PolarisVessel,
+    PolarisVisit
 )
-
 
 class PostGres:
     db_engine = None
@@ -31,32 +31,6 @@ class PostGres:
 
     def __init__(self, session: sqlalchemy.orm.session.sessionmaker):
         self.Session = session
-
-    #    def daily_score_insert_or_update(self, args: dict[str, any]) -> DailyScore:
-    #        candidate = DailyScore(args)
-    #
-    #        try:
-    #            with self.Session() as session:
-    #                existing = session.scalars(
-    #                    select(DailyScore).filter(
-    #                        and_(
-    #                            DailyScore.score_date == candidate.score_date,
-    #                            DailyScore.platform == candidate.platform,
-    #                        )
-    #                    )
-    #                ).first()
-    #
-    #                if existing is None:
-    #                    session.add(candidate)
-    #                else:
-    #                    existing.file_quantity = candidate.file_quantity
-    #                    existing.obs_quantity = candidate.obs_quantity
-    #
-    #                session.commit()
-    #        except Exception as error:
-    #            print(error)
-    #
-    #        return candidate
 
     def load_log_insert(self, args: dict[str, any]) -> PolarisLoadLog:
         candidate = PolarisLoadLog(args)
@@ -210,6 +184,23 @@ class PostGres:
                 select(PolarisVessel).filter_by(imo_code=imo_code)
             ).first()
 
+    def visit_insert(self, args: dict[str, any]) -> PolarisVisit:
+        candidate = PolarisVisit(args)
+
+        try:
+            with self.Session() as session:
+                session.add(candidate)
+                session.commit()
+        except Exception as error:
+            print(error)
+
+        return candidate
+    
+    def visit_select_by_imo_and_active(self, imo_code: str) -> list[PolarisVisit]:
+        with self.Session() as session:
+            return session.scalars(
+                select(PolarisVisit).filter_by(imo_code=imo_code, active_flag=True)
+            ).all()
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***

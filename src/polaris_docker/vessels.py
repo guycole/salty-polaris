@@ -38,11 +38,11 @@ class VesselObservation:
     navigation_status: str
 
     destination: str
-    destination_port_code: str
+    destination_locode: str
     arrival_date: str
 
     last_port: str
-    last_port_code: str
+    last_locode: str
     departure_date: str
 
     def __repr__(self) -> str:
@@ -57,7 +57,7 @@ class VesselObservation:
             "callsign": self.callsign,
             "flag": self.flag,
             "grossTon": self.gross_ton,
-            "imo": self.imo,
+            "imoCode": self.imo,
             "length": self.length,
             "mmsi": self.mmsi,
             "vesselUrl": self.vessel_url,
@@ -65,10 +65,10 @@ class VesselObservation:
             "speed": self.speed,
             "navigationStatus": self.navigation_status,
             "destination": self.destination,
-            "destinationPortCode": self.destination_port_code,
+            "destinationLoCode": self.destination_locode,
             "arrivalDate": self.arrival_date,
             "lastPort": self.last_port,
-            "lastPortCode": self.last_port_code,
+            "lastLoCode": self.last_locode,
             "departureDate": self.departure_date,
         }
 
@@ -182,7 +182,7 @@ class VesselParser:
 
         # Destination (from "Destination" in Voyage Data)
         destination = None
-        destination_port_code = None
+        destination_locode = None
         arrival_date = None
         dest_div = soup.find("div", class_="vilabel", string="Destination")
         if dest_div:
@@ -215,14 +215,14 @@ class VesselParser:
             arrival_date = ata_span.get_text().replace("ATA:", "").strip()
 
         # Last port and last port code (from "Last Port" in Voyage Data)
-        last_port, last_port_code = None, None
+        last_port, last_locode = None, None
         last_port_div = soup.find("div", class_="vilabel", string="Last Port")
         if last_port_div:
             last_port_a = last_port_div.find_next("a")
             if last_port_a:
                 last_port = last_port_a.get_text(strip=True)
                 if last_port_a.has_attr("href"):
-                    last_port_code = last_port_a["href"].split("/")[-1]
+                    last_locode = last_port_a["href"].split("/")[-1]
 
         # Departure date (from "Last Port" and "ATA"/"ATD" in Voyage Data)
         departure_date = None
@@ -253,14 +253,14 @@ class VesselParser:
             mmsi=mmsi,
             vessel_url=vessel_url,
             arrival_date=arrival_date,
-            destination_port_code=destination_port_code,
+            destination_locode=destination_locode,
             departure_date=departure_date,
             course=course,
             speed=speed,
             navigation_status=navigation_status,
             destination=destination,
             last_port=last_port,
-            last_port_code=last_port_code,
+            last_locode=last_locode,
         )
 
 
@@ -369,7 +369,6 @@ class VesselDriver:
             print("unknown stunt")
 
         return obs_dict
-
 
 #
 # vessels development

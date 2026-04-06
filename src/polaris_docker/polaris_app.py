@@ -11,35 +11,32 @@ import os
 
 from ports import PortDriver, PortParser
 from vessels import VesselDriver, VesselScraper
+from visit import VisitDriver
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from postgres import PostGres
 
+import yaml
+from yaml.loader import SafeLoader
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("polaris")
 
-
 class PolarisApp:
 
-    def __init__(self, stunt_box: str):
-        self.stunt_box = stunt_box
+    def __init__(self, configuration: dict[str, any]):
+        self.stunt_box = configuration['stunt_box']
 
-        self.success_dir = "/var/polaris/success"
         self.failure_dir = "/var/polaris/failure"
         self.fresh_dir = "/var/polaris/fresh"
-
-#        self.success_dir = "/mnt/polaris/success"
-#        self.failure_dir = "/mnt/polaris/failure"
-#        self.fresh_dir = "/mnt/polaris/fresh"
+        self.success_dir = "/var/polaris/success"
 
         self.failure = 0
         self.success = 0
-
-        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
-        self.db_conn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
-        self.db_conn = ("postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris")
+        
+        self.db_conn = configuration['dbConn']
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
@@ -78,8 +75,8 @@ class PolarisApp:
         if not arg or not arg.strip():
             return datetime.datetime(1970, 1, 1)
         try:
-            # Use current year
-            this_year = datetime.datetime.utcnow().year
+            # Use current year (timezone-aware UTC)
+            this_year = datetime.datetime.now(datetime.UTC).year
             # Example: 'Apr 14, 02:00' -> 'Apr 14 2026 02:00'
             dt = datetime.datetime.strptime(
                 f"{arg.strip()} {this_year}", "%b %d, %H:%M %Y"
@@ -108,57 +105,28 @@ class PolarisApp:
             "file_type": json_dict["application"],
             "obs_quantity": len(json_dict["vessels"]),
             "host_name": json_dict["hostName"],
-            "port_code": json_dict["portCode"],
+            "locode": json_dict["loCode"],
         }
 
         self.postgres.load_log_insert(args)
 
     def port_observation(self, vessel_dict: dict[str, any]) -> None:
-        imo_code = vessel_dict["vesselUrl"].split("/")[-1]
-        port_code = vessel_dict["portUrl"].split("/")[-1]
-
         args = {
-            "eta": self.port_datetime(""),
-            "imo_code": imo_code,
+            "imo_code": vessel_dict["imoCode"],
             "obs_time": datetime.datetime.now(),
-            "port_code": port_code,
+            "locode": vessel_dict["loCode"],
             "arrival": self.port_datetime(vessel_dict["arrival"]),
             "departure": self.port_datetime(vessel_dict["departure"]),
             "in_port": vessel_dict["inPort"],
         }
 
-        time_now = datetime.datetime.now()
-        if args["arrival"] > time_now:
-            args["eta"] = args["arrival"]
-            args["arrival"] = self.port_datetime("")
-
         self.postgres.observation_insert(args)
 
-    def port_v1_file(self, json_dict: dict[str, any]) -> None:
-        logger.info(f"port v1 file: {json_dict['fileName']}")
+    def port_v1(self, file_flag: bool, json_dict: dict[str, any]) -> None:
+        # process port scrape
 
-        selected = self.postgres.load_log_select_by_file_name(json_dict["fileName"])
-        if selected is not None:
-            logger.info(f"skipping known file {json_dict['fileName']}")
-            return
-
-        vessel_request = {}
-
-        for vessel in json_dict["vessels"]:
-            imo = vessel["vesselUrl"].split("/")[-1]
-            selected = self.postgres.vessel_select_by_imo(imo)
-            if selected is None:
-                vessel_request[imo] = vessel["vesselUrl"]
-            else:
-                self.port_observation(vessel)
-
-        self.port_load_log_insert(json_dict)
-
-        logger.info(f"missing vessels: {len(vessel_request)} vessels requested")
-
-    def port_v1_net(self, json_dict: dict[str, any]) -> None:
         logger.info(
-            f"port v1 net: {json_dict['portCode']} {len(json_dict['vessels'])} vessels"
+            f"port v1: {json_dict['loCode']} {len(json_dict['vessels'])} vessels"
         )
 
         vessel_request = {}
@@ -175,11 +143,16 @@ class PolarisApp:
 
         logger.info(f"missing vessels: {len(vessel_request)} vessels requested")
 
-        for key in vessel_request:
-            logger.info(f"requesting vessel {key} from {vessel_request[key]}")
-            driver = VesselDriver(self.fresh_dir)
-            vessel_dict = driver.execute("net", vessel_request[key])
-            self.vessel_v1_insert(vessel_dict)
+        if file_flag:
+            logger.info("skipping vessel request")
+        else:
+            # now add missing vessel details
+            for key in vessel_request:
+                logger.info(f"requesting vessel {key} from {vessel_request[key]}")
+                driver = VesselDriver(self.fresh_dir)
+                vessel_dict = driver.execute("net", vessel_request[key])
+                self.vessel_v1_insert(vessel_dict)
+#                self.port_observation(vessel_dict)
 
     def vessel_v1_insert(self, vessel_dict: dict[str, any]) -> None:
         imo_code = vessel_dict["url"].split("/")[-1]
@@ -226,13 +199,8 @@ class PolarisApp:
         logger.info(f"{len(targets)} files noted")
 
         for target in targets:
-            if target.endswith(".html"):
-                # HTML files are only for debugging
-                self.file_success(target)
-                continue
-
             if target.endswith(".json"):
-                # Vessels load first
+                # vessels load first
                 json_dict = self.json_reader(target)
 
                 if "application" not in json_dict:
@@ -241,7 +209,7 @@ class PolarisApp:
                     self.vessel_v1_insert(json_dict)
                     self.file_success(target)
             else:
-                logger.warning(f"unknown file type: {target}")
+                logger.warning(f"skipping file: {target}")
                 self.file_failure(target)
 
         targets = os.listdir(".")
@@ -254,24 +222,32 @@ class PolarisApp:
                 continue
 
             if json_dict["application"] == "polaris-ports-v1":
-                if "fileName" in json_dict:
-                    self.port_v1_file(json_dict)
+                try:
+                    self.port_v1(True, json_dict)
+
+                    visit_driver = VisitDriver(self.postgres.Session)
+                    visit_driver.visit_v1(json_dict)
+
                     self.file_success(target)
-                else:
+                except Exception as error:
+                    logger.info(error)
                     self.file_failure(target)
             else:
-                logger.warning(f"unknown file type: {target}")
+                logger.info(f"unknown file type: {target}")
                 self.file_failure(target)
 
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
         ports_urls = self.get_port_urls()
-        ports_urls = ["https://www.vesselfinder.com/ports/USRCH001"]
+        ports_urls = ["https://www.vesselfinder.com/ports/USSAC001"]
         for port_url in ports_urls:
             logger.info(f"processing {port_url}")
             port_driver = PortDriver(self.fresh_dir)
             port_dict = port_driver.execute("net", port_url)
-            self.port_v1_net(port_dict)
+            self.port_v1(False, port_dict)
+
+            visit_driver = VisitDriver(self.postgres.Session)
+            visit_driver.visit_v1(port_dict)
 
     def execute(self) -> None:
         logger.info(f"polaris execute")
@@ -284,10 +260,21 @@ class PolarisApp:
 
 
 if __name__ == "__main__":
-    # stunt_box options: "file" and "net"
-    stunt_box = os.environ.get("stuntbox", "net")
+    configuration = {}
+    
+    file_name = "config.yaml"
 
-    app = PolarisApp(stunt_box)
+    with open(file_name, "r") as in_file:
+        try:
+            configuration = yaml.load(in_file, Loader=SafeLoader)
+        except yaml.YAMLError as error:
+            print(error)
+
+    # stunt_box options: "file" and "net"
+    configuration['stunt_box'] = os.environ.get("stuntbox", "net")
+#    configuration['stunt_box'] = os.environ.get("stuntbox", "file")
+
+    app = PolarisApp(configuration)
     app.execute()
 
 # ;;; Local Variables: ***

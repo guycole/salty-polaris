@@ -12,6 +12,7 @@
 --
 create table polaris_visit (
   id                  bigserial    primary key,
+  active_flag         boolean      not null,
   date_arrival        date         not null,
   date_departure      date         not null,
   imo_code            varchar(24)  not null,

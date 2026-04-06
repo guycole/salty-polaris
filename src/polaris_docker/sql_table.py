@@ -33,7 +33,7 @@ class PolarisLoadLog(Base):
     load_time = Column(DateTime)
     obs_quantity = Column(Integer)
     host_name = Column(String)
-    port_code = Column(String)
+    locode = Column(String)
 
     def __init__(self, args: dict[str, any]):
         self.file_name = args["file_name"]
@@ -42,30 +42,28 @@ class PolarisLoadLog(Base):
         self.load_time = datetime.now()
         self.obs_quantity = args["obs_quantity"]
         self.host_name = args["host_name"]
-        self.port_code = args["port_code"]
+        self.locode = args["locode"]
 
     def __repr__(self):
-        return f"load_log({self.file_name} {self.file_time} {self.platform})"
+        return f"load_log({self.file_name} {self.file_time} {self.host_name})"
 
 
 class PolarisObservation(Base):
     __tablename__ = "polaris_observation"
 
     id = Column(Integer, primary_key=True)
-    eta = Column(DateTime)
     imo_code = Column(String)
     obs_time = Column(DateTime)
-    port_code = Column(String)
+    locode = Column(String)
     arrival = Column(DateTime)
     departure = Column(DateTime)
     in_port = Column(Boolean)
 
     def __init__(self, args: dict[str, any]):
         self.imo_code = args["imo_code"]
-        self.eta = args["eta"]
         self.imo_code = args["imo_code"]
         self.obs_time = args["obs_time"]
-        self.port_code = args["port_code"]
+        self.locode = args["locode"]
         self.arrival = args["arrival"]
         self.departure = args["departure"]
         self.in_port = args["in_port"]
@@ -75,14 +73,14 @@ class PolarisPort(Base):
     __tablename__ = "polaris_port"
 
     id = Column(Integer, primary_key=True)
-    port_code = Column(String)
-    port_name = Column(String)
+    locode = Column(String)
+    name = Column(String)
     scrape_flag = Column(Boolean)
     url = Column(String)
 
     def __init__(self, args: dict[str, any]):
-        self.port_code = args["port_code"]
-        self.port_name = args["port_name"]
+        self.locode = args["code"]
+        self.name = args["name"]
         self.scrape_flag = args["scrape_flag"]
         self.url = args["url"]
 
@@ -123,6 +121,31 @@ class PolarisVessel(Base):
     def __repr__(self):
         return f"PolarisVessel({self.vessel_name} {self.imo_code} {self.vessel_type})"
 
+class PolarisVisit(Base):
+    __tablename__ = "polaris_visit"
+
+    id = Column(Integer, primary_key=True)
+    active_flag = Column(Boolean)
+    date_arrival = Column(Date)
+    date_departure = Column(Date)
+    imo_code = Column(String)
+    in_port = Column(Boolean)
+    locode_current = Column(String)
+    locode_destination = Column(String)
+    locode_last = Column(String)
+
+    def __init__(self, args: dict[str, any]):
+        self.active_flag = args.get("active_flag", True)
+        self.date_arrival = args["date_arrival"]
+        self.date_departure = args["date_departure"]
+        self.imo_code = args["imo_code"]
+        self.in_port = args["in_port"]
+        self.locode_current = args["locode_current"]
+        self.locode_destination = args["locode_destination"]
+        self.locode_last = args["locode_last"]
+
+    def __repr__(self):
+        return f"PolarisVisit({self.imo_code} {self.date_arrival} {self.date_departure})"
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***

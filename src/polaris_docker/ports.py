@@ -26,6 +26,8 @@ from urllib.parse import urljoin
 
 @dataclass
 class VesselRecord:
+    imo: str
+    locode: str
     name: str
     port_url: str
     vessel_url: str
@@ -39,10 +41,12 @@ class VesselRecord:
     in_port: bool = False
 
     def __repr__(self) -> str:
-        return f"VesselRecord(name={self.name!r}, type={self.vessel_type!r}, flag={self.flag!r}, size={self.size!r}, gross_ton={self.gross_ton!r}, built={self.built!r})"
+        return f"VesselRecord(name={self.name}, type={self.vessel_type}, flag={self.flag}, imo={self.imo}, gross_ton={self.gross_ton})"
 
     def to_dict(self) -> dict:
         return {
+            "imoCode": self.imo,
+            "loCode": self.locode,
             "name": self.name,
             "portUrl": self.port_url,
             "vesselUrl": self.vessel_url,
@@ -182,6 +186,13 @@ class PortParser:
                 vessel_url = (
                     urljoin(self.base_url, vessel_link["href"]) if vessel_link else ""
                 )
+                # Extract IMO from href, e.g. /vessels/details/9427964
+                imo = ""
+                if vessel_link and vessel_link.has_attr("href"):
+                    import re
+                    m = re.search(r"/vessels/details/(\d+)", vessel_link["href"])
+                    if m:
+                        imo = m.group(1)
                 flag_div = vessel_col.find("div", class_="m-flag-small")
                 flag = extract_flag(flag_div) or ""
                 built = ""
@@ -201,7 +212,10 @@ class PortParser:
                             size = td.text.strip() if td.text.strip() != "-" else ""
                 arrival_val = date_val if date_field == "arrival" else ""
                 departure_val = date_val if date_field == "departure" else ""
+                locode = port_url.split("/")[-1][:5] if port_url else ""
                 record = VesselRecord(
+                    imo=imo,
+                    locode=locode,
                     name=name,
                     port_url=port_url,
                     vessel_url=vessel_url,
@@ -268,33 +282,19 @@ class PortDriver:
         self.fresh_dir = fresh_dir
 
         base_file_name = str(uuid.uuid4())
-        #        print("base_file_name: ", base_file_name)
+        print("base_file_name: ", base_file_name)
         self.html_file_name = f"{base_file_name}.html"
         self.json_file_name = f"{base_file_name}.json"
 
-    def json_preamble(self, vessel_list: list[VesselRecord]) -> dict[str, any]:
-        if len(vessel_list) < 1:
-            return {
-                "application": "polaris-ports-v1",
-                "fileName": self.json_file_name,
-                "portCode": "bogus",
-                "schemaVersion": 1,
-                "timeStampEpoch": int(time.time()),
-                "url": "bogus",
-                "vessels": [],
-            }
-
-        port_url = vessel_list[0].port_url
-        port_code = port_url.split("/")[-1]
-
+    def json_payload(self, arg: str, stunt:str, vessel_list: list[VesselRecord]) -> dict[str, any]:
         payload = {
             "application": "polaris-ports-v1",
             "fileName": self.json_file_name,
             "hostName": socket.gethostname(),
-            "portCode": port_code,
+            "loCode": arg.split("/")[-1][:5] if stunt == "net" else "XXXXX",
             "schemaVersion": 1,
             "timeStampEpoch": int(time.time()),
-            "url": port_url,
+            "url": arg if stunt == "net" else "file://" + arg,
             "vessels": [],
         }
 
@@ -328,28 +328,28 @@ class PortDriver:
             print(f"file stunt: {arg}")
             raw_html = self.html_reader(arg)
             vessel_list = parser.parse(raw_html)
-            port_dict = self.json_preamble(vessel_list)
+            port_dict = self.json_payload(arg, stunt, vessel_list)
         elif stunt == "net":
             # net reads raw html from network, and writes html/json
             # print(f"net stunt: {arg}")
             scraper = PortScraper(self.fresh_dir, arg)
             raw_html = scraper.fetch(self.html_file_name, True)
             vessel_list = parser.parse(raw_html)
-            port_dict = self.json_preamble(vessel_list)
+            port_dict = self.json_payload(arg, stunt, vessel_list)
             self.json_writer(port_dict)
         elif stunt == "test":
             print(f"test stunt: {arg}")
             raw_html = self.html_reader(arg)
             vessel_list = parser.parse(raw_html)
-            for vessel in vessel_list:
-                print(vessel.to_dict())
-            port_dict = self.json_preamble(vessel_list)
+#            for vessel in vessel_list:
+#                print(vessel.to_dict())
+            port_dict = self.json_payload(arg, stunt, vessel_list)
+            print(port_dict)
         else:
             print("unknown stunt")
 
         # print(f"parse results: {len(port_dict['vessels'])} vessels found")
         return port_dict
-
 
 #
 # ports development
@@ -365,8 +365,8 @@ if __name__ == "__main__":
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = PortDriver(configuration["freshDir"])
-            driver.execute("test", "/var/polaris/fresh/fe6fc898-eb55-4be1-b572-85a68fc24fc4.html")
-            #driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
+            driver.execute("test", "/var/polaris/fresh/720524c3-f55a-48be-88ab-9d30506dcaea.html")
+            driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
         except yaml.YAMLError as error:
             print(error)
 
