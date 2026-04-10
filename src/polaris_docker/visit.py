@@ -1,4 +1,4 @@
-import datetime
+
 import json
 import logging
 import os
@@ -18,6 +18,8 @@ import yaml
 from yaml.loader import SafeLoader
 
 from bs4 import BeautifulSoup
+
+from datetime import datetime, timezone
 
 from dataclasses import dataclass, field
 from urllib.parse import urljoin
@@ -55,8 +57,8 @@ class VisitDriver:
         self.fresh_dir = fresh_dir
         self.postgres = PostGres(session)
 
-        self.default_date = datetime.datetime(1970, 1, 1)
-        self.time_now = datetime.datetime.now()
+        self.default_date = datetime(1970, 1, 1)
+        self.time_now = datetime.now()
 
     def normalize_date(self, value: any) -> datetime.date:
         if isinstance(value, datetime.datetime):
@@ -125,6 +127,9 @@ class VisitDriver:
 
 #        print(json_dict)
 
+        observation_time = datetime.fromtimestamp(json_dict["timeStampEpoch"], timezone.utc)
+        print(f"observation time: {observation_time}")
+
         for vessel in json_dict["vessels"]:
             print(f"processing vessel {vessel['name']} ({vessel['imoCode']})")
 
@@ -132,47 +137,49 @@ class VisitDriver:
                 print("skipping vessel with gross tonnage < 400")
                 continue
 
-            if len(vessel["arrival"]) > 0:
-                temp_dt = PolarisUtility.port_datetime(vessel["arrival"])
-                if temp_dt is None:
-                    continue
-                temp = temp_dt.date()
-                if temp > self.time_now.date():
-                    print("skipping future arrival date")
-                    continue
 
-                vessel["arrival"] = temp
-                print("arrival vessel is inport")
-                vessel["inPort"] = True
-    
-            if len(vessel["departure"]) > 0:
-                temp_dt = PolarisUtility.port_datetime(vessel["departure"])
-                if temp_dt is None:
-                    continue
-                temp = temp_dt.date()
-                vessel["departure"] = temp
 
-                print("departure vessel is not inport")
-                vessel["inPort"] = False
-
-            duration = 0
-            selected = self.postgres.visit_select_by_imo_and_active(vessel["imoCode"])
-            if len(selected) < 1:
-                print(f"no visit record found for {vessel['name']}")
-                if vessel["inPort"]:
-                    print(f"inport true for {vessel['name']}")
-                    self.visit_insert(vessel)
-            elif len(selected) == 1:
-                print(f"visit record already exists for {vessel['name']}")
-                if vessel["inPort"]:
-                    print(f"inport true for {vessel['name']}")
-                else:
-                    print(f"inport false1 for {vessel['name']}")
-                    duration = (vessel["departure"] - selected[0].date_arrival).days
-                    self.visit_departure(duration, vessel)
-            else:
-                print(f"multiple records for {vessel['name']}")
-                self.visit_departure(duration, vessel)
+#            if len(vessel["arrival"]) > 0:
+#                temp_dt = PolarisUtility.port_datetime(vessel["arrival"])
+#                if temp_dt is None:
+#                    continue
+#                temp = temp_dt.date()
+#                if temp > self.time_now.date():
+#                    print("skipping future arrival date")
+#                    continue
+#
+#                vessel["arrival"] = temp
+#                print("arrival vessel is inport")
+#                vessel["inPort"] = True
+#    
+#            if len(vessel["departure"]) > 0:
+#                temp_dt = PolarisUtility.port_datetime(vessel["departure"])
+#                if temp_dt is None:
+#                    continue
+#                temp = temp_dt.date()
+#                vessel["departure"] = temp
+#
+#                print("departure vessel is not inport")
+#                vessel["inPort"] = False
+#
+#            duration = 0
+#            selected = self.postgres.visit_select_by_imo_and_active(vessel["imoCode"])
+#            if len(selected) < 1:
+#                print(f"no visit record found for {vessel['name']}")
+#                if vessel["inPort"]:
+#                    print(f"inport true for {vessel['name']}")
+#                    self.visit_insert(vessel)
+#            elif len(selected) == 1:
+#                print(f"visit record already exists for {vessel['name']}")
+#                if vessel["inPort"]:
+#                    print(f"inport true for {vessel['name']}")
+#                else:
+#                    print(f"inport false1 for {vessel['name']}")
+#                    duration = (vessel["departure"] - selected[0].date_arrival).days
+#                    self.visit_departure(duration, vessel)
+#            else:
+#                print(f"multiple records for {vessel['name']}")
+#                self.visit_departure(duration, vessel)
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***
