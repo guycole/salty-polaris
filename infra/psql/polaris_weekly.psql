@@ -1,0 +1,19 @@
+--
+-- Title: polaris_weekly.psql
+-- Description: port activity summary
+--
+-- locode
+-- week_start 
+--
+create table polaris_weekly (
+  id             bigserial    primary key,
+  locode         varchar(24)  not null,
+  pop_container  integer      not null,
+  pop_bulker     integer      not null,
+  pop_tankers    integer      not null,
+  pop_total    integer      not null,
+  week_start     date         not null
+);
+
+grant select, insert, update, delete on polaris_weekly to polaris_client;
+grant usage, select on sequence polaris_weekly_id_seq to polaris_client;

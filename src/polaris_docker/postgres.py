@@ -185,6 +185,7 @@ class PostGres:
             ).first()
 
     def visit_insert(self, args: dict[str, any]) -> PolarisVisit:
+        args["active_flag"] = True
         candidate = PolarisVisit(args)
 
         try:
@@ -196,6 +197,25 @@ class PostGres:
 
         return candidate
     
+    def visit_update_departure(self, args: dict[str, any]) -> None:
+        try:
+            with self.Session() as session:
+                visit = session.scalars(
+                    select(PolarisVisit).filter_by(imo_code=args["imo_code"], active_flag=True)
+                ).first()
+                if visit:
+                    visit.date_departure = args['date_departure']
+                    visit.duration_days = args['duration_days']
+                    visit.in_port = False
+                    visit.locode_destination = args['locode_destination']
+                    visit.active_flag = False
+                    session.commit()
+                    print(f"Updated departure for IMO {args['imo_code']}")
+                else:
+                    print(f"No active visit found for IMO {args['imo_code']} to update departure.")
+        except Exception as error:
+            print(f"Error updating departure: {error}")
+
     def visit_select_by_imo_and_active(self, imo_code: str) -> list[PolarisVisit]:
         with self.Session() as session:
             return session.scalars(

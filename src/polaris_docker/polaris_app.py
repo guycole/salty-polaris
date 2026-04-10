@@ -8,7 +8,9 @@ import datetime
 import json
 import logging
 import os
+import sys
 
+from utility import PolarisUtility
 from ports import PortDriver, PortParser
 from vessels import VesselDriver, VesselScraper
 from visit import VisitDriver
@@ -67,25 +69,6 @@ class PolarisApp:
 
         return results
 
-    def port_datetime(self, arg: str) -> datetime.datetime:
-        """
-        Convert a string like 'Apr 14, 02:00' to a datetime with the current year.
-        Returns 1 JAN 1970 if arg is empty or invalid.
-        """
-        if not arg or not arg.strip():
-            return datetime.datetime(1970, 1, 1)
-        try:
-            # Use current year (timezone-aware UTC)
-            this_year = datetime.datetime.now(datetime.UTC).year
-            # Example: 'Apr 14, 02:00' -> 'Apr 14 2026 02:00'
-            dt = datetime.datetime.strptime(
-                f"{arg.strip()} {this_year}", "%b %d, %H:%M %Y"
-            )
-            return dt
-        except Exception as e:
-            logger.warning(f"Could not parse port datetime from '{arg}': {e}")
-            return None
-
     def port_load_log_insert(self, json_dict: dict[str, any]) -> None:
         if "hostName" not in json_dict:
             json_dict["hostName"] = "unknown"
@@ -111,12 +94,14 @@ class PolarisApp:
         self.postgres.load_log_insert(args)
 
     def port_observation(self, vessel_dict: dict[str, any]) -> None:
+        print(vessel_dict)
+
         args = {
             "imo_code": vessel_dict["imoCode"],
             "obs_time": datetime.datetime.now(),
             "locode": vessel_dict["loCode"],
-            "arrival": self.port_datetime(vessel_dict["arrival"]),
-            "departure": self.port_datetime(vessel_dict["departure"]),
+            "arrival": PolarisUtility.port_datetime(vessel_dict["arrival"]),
+            "departure": PolarisUtility.port_datetime(vessel_dict["departure"]),
             "in_port": vessel_dict["inPort"],
         }
 
@@ -124,22 +109,16 @@ class PolarisApp:
 
     def port_v1(self, file_flag: bool, json_dict: dict[str, any]) -> None:
         # process port scrape
-
-        logger.info(
-            f"port v1: {json_dict['loCode']} {len(json_dict['vessels'])} vessels"
-        )
+        logger.info(f"port v1: {json_dict['loCode']} {len(json_dict['vessels'])} vessels")
 
         vessel_request = {}
 
+        # add missing vessels to postgres
         for vessel in json_dict["vessels"]:
-            imo = vessel["vesselUrl"].split("/")[-1]
-            selected = self.postgres.vessel_select_by_imo(imo)
+            imo_code = vessel["imoCode"]
+            selected = self.postgres.vessel_select_by_imo(imo_code)
             if selected is None:
-                vessel_request[imo] = vessel["vesselUrl"]
-            else:
-                self.port_observation(vessel)
-
-        self.port_load_log_insert(json_dict)
+                vessel_request[imo_code] = vessel["vesselUrl"]
 
         logger.info(f"missing vessels: {len(vessel_request)} vessels requested")
 
@@ -149,15 +128,15 @@ class PolarisApp:
             # now add missing vessel details
             for key in vessel_request:
                 logger.info(f"requesting vessel {key} from {vessel_request[key]}")
+
                 driver = VesselDriver(self.fresh_dir)
                 vessel_dict = driver.execute("net", vessel_request[key])
                 self.vessel_v1_insert(vessel_dict)
-#                self.port_observation(vessel_dict)
+  
+        self.port_load_log_insert(json_dict)
 
     def vessel_v1_insert(self, vessel_dict: dict[str, any]) -> None:
-        imo_code = vessel_dict["url"].split("/")[-1]
-
-        selected = self.postgres.vessel_select_by_imo(imo_code)
+        selected = self.postgres.vessel_select_by_imo(vessel_dict["imoCode"])
         if selected is None:
             args = {
                 "ais_type": vessel_dict["observation"]["aisType"],
@@ -165,7 +144,7 @@ class PolarisApp:
                 "built_year": vessel_dict["observation"]["built"],
                 "callsign": vessel_dict["observation"]["callsign"],
                 "gross_ton": vessel_dict["observation"]["grossTon"],
-                "imo_code": imo_code,
+                "imo_code": vessel_dict["imoCode"],
                 "length": vessel_dict["observation"]["length"],
                 "mmsi_code": vessel_dict["observation"]["mmsi"],
                 "url": vessel_dict["url"],
@@ -225,8 +204,8 @@ class PolarisApp:
                 try:
                     self.port_v1(True, json_dict)
 
-                    visit_driver = VisitDriver(self.postgres.Session)
-                    visit_driver.visit_v1(json_dict)
+#                    visit_driver = VisitDriver(self.fresh_dir, self.postgres.Session)
+#                    visit_driver.visit_v1(json_dict)
 
                     self.file_success(target)
                 except Exception as error:
@@ -239,15 +218,15 @@ class PolarisApp:
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
         ports_urls = self.get_port_urls()
-        ports_urls = ["https://www.vesselfinder.com/ports/USSAC001"]
+        #ports_urls = ["https://www.vesselfinder.com/ports/USRCH001"]
         for port_url in ports_urls:
             logger.info(f"processing {port_url}")
             port_driver = PortDriver(self.fresh_dir)
             port_dict = port_driver.execute("net", port_url)
             self.port_v1(False, port_dict)
 
-            visit_driver = VisitDriver(self.postgres.Session)
-            visit_driver.visit_v1(port_dict)
+#            visit_driver = VisitDriver(self.fresh_dir, self.postgres.Session)
+#            visit_driver.visit_v1(port_dict)
 
     def execute(self) -> None:
         logger.info(f"polaris execute")
@@ -257,7 +236,6 @@ class PolarisApp:
         elif self.stunt_box == "net":
             logger.info(f"stunt box: net")
             self.net_driver()
-
 
 if __name__ == "__main__":
     configuration = {}

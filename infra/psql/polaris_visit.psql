@@ -15,6 +15,7 @@ create table polaris_visit (
   active_flag         boolean      not null,
   date_arrival        date         not null,
   date_departure      date         not null,
+  duration_days       integer      not null,
   imo_code            varchar(24)  not null,
   in_port             boolean      not null default false,
   locode_current      varchar(24)  not null,

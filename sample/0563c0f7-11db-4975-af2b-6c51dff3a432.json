@@ -1,0 +1,31 @@
+{
+    "application": "polaris-vessels-v1",
+    "fileName": "0563c0f7-11db-4975-af2b-6c51dff3a432.json",
+    "hostName": "entropy",
+    "imoCode": "9665736",
+    "schemaVersion": 1,
+    "timeStampEpoch": 1775786643,
+    "url": "https://www.vesselfinder.com/vessels/details/9665736",
+    "observation": {
+        "name": "PEGASUS VOYAGER",
+        "aisType": "Tanker (HAZ-D)",
+        "beam": "48",
+        "built": "2014",
+        "callsign": "C6AP3",
+        "flag": "Bahamas",
+        "grossTon": "85147",
+        "imoCode": "9665736",
+        "length": "276",
+        "mmsi": "311000111",
+        "vesselUrl": "https://www.vesselfinder.com/vessels/details/9665736",
+        "course": "51.9",
+        "speed": "0.1",
+        "navigationStatus": "At anchor",
+        "destination": "San Francisco Anch., United States (USA)",
+        "destinationLoCode": "USSFO001",
+        "arrivalDate": "2026-04-09T23:00:00",
+        "lastPort": "San Francisco Anch., United States (USA)",
+        "lastLoCode": "USSFO001",
+        "departureDate": "2026-04-09T22:29:00"
+    }
+}

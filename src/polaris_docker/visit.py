@@ -10,6 +10,7 @@ import time
 import uuid
 
 from postgres import PostGres
+from utility import PolarisUtility
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urljoin
 
 import sqlalchemy
-from sqlalchemy import and_, create_engine
+from sqlalchemy import Integer, and_, create_engine, null
 from sqlalchemy import func
 from sqlalchemy import select
 
@@ -34,123 +35,144 @@ from sql_table import (
     PolarisVisit
 )
 
+from vessels import VesselDriver
+
+@dataclass
+class VisitRecord:
+    date_arrival: datetime.date
+    date_departure: datetime.date
+    imo_code: str
+    in_port: bool
+    locode_current: str
+    locode_destination: str
+    locode_last: str
+
+    def __repr__(self) -> str:
+        return f"VisitRecord(date_arrival={self.date_arrival}, date_departure={self.date_departure}, imo_code={self.imo_code}, in_port={self.in_port}, locode_current={self.locode_current}, locode_destination={self.locode_destination})"
+
 class VisitDriver:
-    def __init__(self, session: sqlalchemy.orm.session.sessionmaker):
+    def __init__(self, fresh_dir: str, session: sqlalchemy.orm.session.sessionmaker):
+        self.fresh_dir = fresh_dir
         self.postgres = PostGres(session)
 
         self.default_date = datetime.datetime(1970, 1, 1)
+        self.time_now = datetime.datetime.now()
 
-#        imo = "9538971" 
-#        selected = self.postgres.vessel_select_by_imo(imo)
-#        print(selected)
+    def normalize_date(self, value: any) -> datetime.date:
+        if isinstance(value, datetime.datetime):
+            return value.date()
+        if isinstance(value, datetime.date):
+            return value
+        if isinstance(value, str) and value.strip():
+            parsed = PolarisUtility.port_datetime(value)
+            if parsed is not None:
+                return parsed.date()
+        return self.default_date.date()
+
+    def visit_departure(self, duration_days: int, json_dict: dict[str, any]) -> None:
+        # Update the visit record for vessel departure
+        print(f"visit departure for {json_dict['name']} ({json_dict['imoCode']})")
+
+        vessel_driver = VesselDriver(self.fresh_dir)
+        vessel_dict = vessel_driver.execute("net", json_dict["vesselUrl"])
+
+        raw_departure = json_dict.get("departure")
+        if not raw_departure:
+            raw_departure = vessel_dict["observation"].get("departureDate")
+
+        args = {
+            "date_departure": self.normalize_date(raw_departure),
+            "duration_days": duration_days,
+            "imo_code": json_dict["imoCode"],
+            "locode_destination": vessel_dict["observation"]["destinationLoCode"],
+        }
+
+        self.postgres.visit_update_departure(args)
+
+    def visit_insert(self, json_dict: dict[str, any]) -> None:
+        print(f"visit insert for {json_dict['name']} ({json_dict['arrival']})")
+
+        print(json_dict)
+
+        vessel_driver = VesselDriver(self.fresh_dir)
+        vessel_dict = vessel_driver.execute("net", json_dict["vesselUrl"])
+        print("xxxxxxxxx")
+        print(vessel_dict)
+
+        raw_arrival = json_dict.get("arrival")
+        if not raw_arrival:
+            raw_arrival = vessel_dict["observation"].get("arrivalDate")
+
+        raw_departure = json_dict.get("departure")
+        if not raw_departure:
+            raw_departure = vessel_dict["observation"].get("departureDate")
+
+        args = {
+            "date_arrival": self.normalize_date(raw_arrival),
+            "date_departure": self.normalize_date(raw_departure),
+            "duration_days": 0,
+            "imo_code": json_dict["imoCode"],
+            "in_port": json_dict["inPort"],
+            "locode_current": json_dict["loCode"],
+            "locode_destination": vessel_dict["observation"].get("destinationLoCode", "XXXXX"),
+            "locode_last": vessel_dict["observation"]["lastLoCode"],
+        }
+
+        self.postgres.visit_insert(args)
 
     def visit_v1(self, json_dict: dict[str, any]) -> None:
         print("visit v1")
 
-        print(json_dict)
+#        print(json_dict)
 
         for vessel in json_dict["vessels"]:
+            print(f"processing vessel {vessel['name']} ({vessel['imoCode']})")
+
             if vessel['grossTon'] < 400:
                 print("skipping vessel with gross tonnage < 400")
                 continue
 
-            selected = self.postgres.visit_select_by_imo_and_active(vessel["imoCode"])
-            print(selected)
+            if len(vessel["arrival"]) > 0:
+                temp_dt = PolarisUtility.port_datetime(vessel["arrival"])
+                if temp_dt is None:
+                    continue
+                temp = temp_dt.date()
+                if temp > self.time_now.date():
+                    print("skipping future arrival date")
+                    continue
 
-            if vessel["inPort"]:
-                print(f"inport true for {vessel['name']}")
-            else:
-                print(f"inport false for {vessel['name']}")
-
-#        selected = self.postgres.vessel_select_by_imo(vessel["imoCode"])
-#        print(selected)
+                vessel["arrival"] = temp
+                print("arrival vessel is inport")
+                vessel["inPort"] = True
     
+            if len(vessel["departure"]) > 0:
+                temp_dt = PolarisUtility.port_datetime(vessel["departure"])
+                if temp_dt is None:
+                    continue
+                temp = temp_dt.date()
+                vessel["departure"] = temp
 
-    def visit_vx(self, json_dict: dict[str, any]) -> None:
-        print("visit v1")
+                print("departure vessel is not inport")
+                vessel["inPort"] = False
 
-        for vessel in json_dict["vessels"]:
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + str(vessel['grossTon']))
-
-            if vessel['grossTon'] < 400:
-                print("skipping vessel with gross tonnage < 400")
-                continue
-
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-            print(vessel)
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-                
-            selected = self.postgres.vessel_select_by_imo(vessel["imoCode"])
-            print(selected)
-
-            arrival = self.port_datetime(vessel["arrival"])
-            departure = self.port_datetime(vessel["departure"])
-
-            print(f"arrival: {arrival}, departure: {departure}")
-
-#                self.postgres.visit_insert(
-#                    {
-#                        "date_arrival": arrival.date(),
-#                        "date_departure": departure.date(),
-#                        "imo_code": vessel["imoCode"],
-#                        "in_port": vessel["inPort"],
-#                        "locode_current": vessel["loCode"],
-#                        "locode_destination": "fixme",  
-#                        "locode_last": "fixme",
-#                   }
-#                )
-
-    def execute(self, stunt: str, arg: str) -> dict[str, any]:
-        parser = PortParser()
-        port_dict = {}
-
-        if stunt == "file":
-            # file reads raw html from file system, does not write html/json
-            print(f"file stunt: {arg}")
-            raw_html = self.html_reader(arg)
-            vessel_list = parser.parse(raw_html)
-            port_dict = self.json_preamble(vessel_list)
-        elif stunt == "net":
-            # net reads raw html from network, and writes html/json
-            # print(f"net stunt: {arg}")
-            scraper = PortScraper(self.fresh_dir, arg)
-            raw_html = scraper.fetch(self.html_file_name, True)
-            vessel_list = parser.parse(raw_html)
-            port_dict = self.json_preamble(vessel_list)
-            self.json_writer(port_dict)
-        elif stunt == "test":
-            print(f"test stunt: {arg}")
-            raw_html = self.html_reader(arg)
-            vessel_list = parser.parse(raw_html)
-            for vessel in vessel_list:
-                print(vessel.to_dict())
-            port_dict = self.json_preamble(vessel_list)
-        else:
-            print("unknown stunt")
-
-        # print(f"parse results: {len(port_dict['vessels'])} vessels found")
-        return port_dict
-
-
-#
-# ports development
-# argv[1] = configuration filename
-#
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        file_name = sys.argv[1]
-    else:
-        file_name = "config.yaml"
-
-    with open(file_name, "r") as in_file:
-        try:
-            configuration = yaml.load(in_file, Loader=SafeLoader)
-            driver = PortDriver(configuration["freshDir"])
-            driver.execute("test", "/var/polaris/fresh/fa94efb1-8d06-4aed-b5a8-f1e6ea635f49.html")
-            #driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
-        except yaml.YAMLError as error:
-            print(error)
+            duration = 0
+            selected = self.postgres.visit_select_by_imo_and_active(vessel["imoCode"])
+            if len(selected) < 1:
+                print(f"no visit record found for {vessel['name']}")
+                if vessel["inPort"]:
+                    print(f"inport true for {vessel['name']}")
+                    self.visit_insert(vessel)
+            elif len(selected) == 1:
+                print(f"visit record already exists for {vessel['name']}")
+                if vessel["inPort"]:
+                    print(f"inport true for {vessel['name']}")
+                else:
+                    print(f"inport false1 for {vessel['name']}")
+                    duration = (vessel["departure"] - selected[0].date_arrival).days
+                    self.visit_departure(duration, vessel)
+            else:
+                print(f"multiple records for {vessel['name']}")
+                self.visit_departure(duration, vessel)
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***

@@ -13,11 +13,12 @@ import time
 import uuid
 import logging
 
+from utility import PolarisUtility
+
 logger = logging.getLogger(__name__)
 
 import yaml
 from yaml.loader import SafeLoader
-
 
 @dataclass
 class VesselObservation:
@@ -71,7 +72,6 @@ class VesselObservation:
             "lastLoCode": self.last_locode,
             "departureDate": self.departure_date,
         }
-
 
 class VesselParser:
 
@@ -184,35 +184,44 @@ class VesselParser:
         destination = None
         destination_locode = None
         arrival_date = None
+
+        def extract_labeled_date(text: str, label: str) -> str:
+            if not text or label not in text:
+                return None
+            tail = text.split(label, 1)[1].strip()
+            # Trim relative-time suffixes and timezone token if present.
+            tail = tail.split("(", 1)[0].strip()
+            if tail.endswith(" UTC"):
+                tail = tail[:-4].strip()
+            return tail
+
         dest_div = soup.find("div", class_="vilabel", string="Destination")
         if dest_div:
-            # The destination is in the next div with class _3-Yih
-            next_div = dest_div.find_next("div", class_="_3-Yih")
-            if next_div:
-                # Normalize whitespace and use title case for city, upper for code
-                dest_text = next_div.get_text(strip=True)
-                if dest_text:
-                    parts = dest_text.split()
-                    if len(parts) > 1:
-                        destination = (
-                            parts[0].upper() + " " + " ".join(parts[1:]).title()
-                        )
-                    else:
-                        destination = dest_text.title()
+            # The destination is in the next <a> tag (port link)
+            dest_a = dest_div.find_next("a")
+            if dest_a:
+                destination = dest_a.get_text(strip=True)
+                href = dest_a.get("href", "")
+                # Extract locode from /ports/LOCODE
+                if href.startswith("/ports/"):
+                    destination_locode = href.split("/ports/")[-1]
             # Arrival date is in the next _value span with class _mcol12ext and contains 'ETA:'
             value_div = dest_div.find_next("div", class_="_value")
             if value_div:
-                eta_span = value_div.find("span", class_="_mcol12ext")
-                if eta_span and "ETA:" in eta_span.get_text():
-                    eta_text = eta_span.get_text()
-                    # Extract just the date part after 'ETA:'
-                    arrival_date = eta_text.split("ETA:")[1].split(",")[0].strip()
+                value_text = value_div.get_text(" ", strip=True)
+                arrival_date = extract_labeled_date(value_text, "ETA:")
 
-        # Arrival date (from "ATA" in Voyage Data)
-        arrival_date = None
-        ata_span = soup.find("span", class_="_mcol12")
-        if ata_span and "ATA:" in ata_span.get_text():
-            arrival_date = ata_span.get_text().replace("ATA:", "").strip()
+        # Arrival date (from "ATA" in Voyage Data) -- only overwrite if not set from ETA
+        if arrival_date is None:
+            # Try ATA from the last-port value block first.
+            if last_port_div := soup.find("div", class_="vilabel", string="Last Port"):
+                atd_div = last_port_div.find_next("div", class_="_value")
+                if atd_div:
+                    arrival_date = extract_labeled_date(atd_div.get_text(" ", strip=True), "ATA:")
+            if arrival_date is None:
+                ata_span = soup.find("span", class_="_mcol12")
+                if ata_span:
+                    arrival_date = extract_labeled_date(ata_span.get_text(" ", strip=True), "ATA:")
 
         # Last port and last port code (from "Last Port" in Voyage Data)
         last_port, last_locode = None, None
@@ -230,13 +239,12 @@ class VesselParser:
         if last_port_div:
             atd_div = last_port_div.find_next("div", class_="_value")
             if atd_div:
-                text = atd_div.get_text()
+                text = atd_div.get_text(" ", strip=True)
                 # Prefer ATD, fallback to ATA if present
-                if "ATD:" in text:
-                    departure_date = text.split("ATD:")[1].split("(")[0].strip()
-                elif "ATA:" in text:
+                departure_date = extract_labeled_date(text, "ATD:")
+                if departure_date is None:
                     # Sometimes only ATA is present, use that as fallback
-                    departure_date = text.split("ATA:")[1].split(",")[0].strip()
+                    departure_date = extract_labeled_date(text, "ATA:")
 
         # vessel_url is now set from canonical link above
 
@@ -298,13 +306,12 @@ class VesselScraper:
 
         return response.text
 
-
 class VesselDriver:
     def __init__(self, fresh_dir: str):
         self.fresh_dir = fresh_dir
 
         base_file_name = str(uuid.uuid4())
-        # print("base_file_name: ", base_file_name)
+        print("vessel base_file_name: ", base_file_name)
 
         self.html_file_name = f"{base_file_name}.html"
         self.json_file_name = f"{base_file_name}.json"
@@ -320,6 +327,7 @@ class VesselDriver:
     def json_preamble(self, obs: VesselObservation) -> dict[str, any]:
         if obs.imo is None or obs.imo == "":
             imo_code = obs.vessel_url.split("/")[-1]
+            obs.imo = imo_code
         else:
             imo_code = obs.imo
 
@@ -333,6 +341,9 @@ class VesselDriver:
             "url": obs.vessel_url,
             "observation": obs.to_dict(),
         }
+
+        payload["observation"]["arrivalDate"] = PolarisUtility.port_datetime(obs.arrival_date).isoformat() if obs.arrival_date else None
+        payload["observation"]["departureDate"] = PolarisUtility.port_datetime(obs.departure_date).isoformat() if obs.departure_date else None
 
         return payload
 
@@ -365,6 +376,8 @@ class VesselDriver:
             print(f"test stunt: {arg}")
             raw_html = self.html_reader(arg)
             obs = parser.parse(raw_html)
+            obs_dict = self.json_preamble(obs)
+            print(obs_dict)
         else:
             print("unknown stunt")
 
@@ -385,9 +398,16 @@ if __name__ == "__main__":
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = VesselDriver(configuration["freshDir"])
             #            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
-            driver.execute(
-                "net", "https://www.vesselfinder.com/vessels/details/9382982"
-            )
+
+            # tanker PEGASUS VOYAGER
+            driver.execute("net", "https://www.vesselfinder.com/vessels/details/9665736")
+            #driver.execute("test", "../../sample/fa17379f-e3bd-4540-9fb6-59bfadcc5372.html")
+
+            # tanker CHANTAL
+            #driver.execute("net", "https://www.vesselfinder.com/vessels/details/9382982")
+
+            # bulker JADE WEALTH
+            # driver.execute("test", "../../sample/ddf84d24-ac17-49d2-acf5-d1133fad3be7.html")
         except yaml.YAMLError as error:
             print(error)
 

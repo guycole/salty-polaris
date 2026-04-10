@@ -128,6 +128,7 @@ class PolarisVisit(Base):
     active_flag = Column(Boolean)
     date_arrival = Column(Date)
     date_departure = Column(Date)
+    duration_days = Column(Integer)
     imo_code = Column(String)
     in_port = Column(Boolean)
     locode_current = Column(String)
@@ -138,6 +139,7 @@ class PolarisVisit(Base):
         self.active_flag = args.get("active_flag", True)
         self.date_arrival = args["date_arrival"]
         self.date_departure = args["date_departure"]
+        self.duration_days = args["duration_days"]
         self.imo_code = args["imo_code"]
         self.in_port = args["in_port"]
         self.locode_current = args["locode_current"]
