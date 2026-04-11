@@ -1,0 +1,1 @@
+if gross_ton > 10000 then must scrape vessel 

@@ -16,4 +16,6 @@ psql < polaris_load_log.psql
 psql < polaris_observation.psql
 psql < polaris_port.psql
 psql < polaris_vessel.psql
+psql < polaris_visit.psql
+psql < polaris_weekly.psql
 #

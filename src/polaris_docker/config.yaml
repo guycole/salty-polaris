@@ -1,22 +1,16 @@
 #
-cookedDir: /var/polaris/cooked
+# mac paths
 failureDir: /var/polaris/failure
 freshDir: /var/polaris/fresh
+successDir: /var/polaris/success
 #
-vesselFinderUrl: "https://www.vesselfinder.com"
+dbConn: postgresql+psycopg2://polaris_client:batabat@127.0.0.1:5432/polaris
 #
-portTargetFiles:
-  - "/var/polaris/fresh/f6e8b11f-35cb-4748-a80b-0cfbfe7b9263.html"
-#
-portTargetUrls: 
-  - "https://www.vesselfinder.com/ports/USBNC001"
-#
-# test vessels
-vesselTargets:
-  - "https://www.vesselfinder.com/vessels/details/9665748"
-  - "https://www.vesselfinder.com/vessels/details/9312808"
-#
-#
-vesselObservations:
-  - "/var/polaris/fresh/fc0ce028-fd79-4e12-ba9d-cb61796d1b11.json"
+# docker paths
+#cookedDir: /mnt/polaris/cooked
+#failureDir: /mnt/polaris/failure
+#freshDir: /mnt/polaris/fresh
+# 
+#dbConn = "postgresql+psycopg2://polaris_client:batabat@host.docker.internal:5432/polaris"
+#dbConn = "postgresql+psycopg2://polaris_client:batabat@172.17.0.1:5432/polaris"
 #

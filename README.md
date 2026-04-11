@@ -17,3 +17,5 @@ docker build -t polaris:latest .
 ```bash
 docker run -v /var/polaris:/mnt/polaris --name polaris porlaris:latest
 ```
+
+Results stored in postgres

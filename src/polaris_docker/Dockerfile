@@ -17,12 +17,15 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY requirements.txt ./
 RUN $VIRTUAL_ENV/bin/pip install --no-cache-dir -r requirements.txt
 
+COPY config.yaml ./
+
 COPY polaris_app.py ./
 COPY ports.py ./
 COPY vessels.py ./
 COPY postgres.py ./
 COPY sql_table.py ./
 COPY vessels.py ./
+COPY visit.py ./
 
 RUN mkdir -p /mnt/polaris
 CMD ["python", "polaris_app.py"]

@@ -9,6 +9,7 @@
 # from sqlalchemy import select
 
 import datetime
+from socket import error
 import time
 from sql_table import PolarisLoadLog, PolarisObservation, PolarisPort
 
@@ -22,8 +23,8 @@ from sql_table import (
     PolarisObservation,
     PolarisPort,
     PolarisVessel,
+    PolarisVisit
 )
-
 
 class PostGres:
     db_engine = None
@@ -31,32 +32,6 @@ class PostGres:
 
     def __init__(self, session: sqlalchemy.orm.session.sessionmaker):
         self.Session = session
-
-    #    def daily_score_insert_or_update(self, args: dict[str, any]) -> DailyScore:
-    #        candidate = DailyScore(args)
-    #
-    #        try:
-    #            with self.Session() as session:
-    #                existing = session.scalars(
-    #                    select(DailyScore).filter(
-    #                        and_(
-    #                            DailyScore.score_date == candidate.score_date,
-    #                            DailyScore.platform == candidate.platform,
-    #                        )
-    #                    )
-    #                ).first()
-    #
-    #                if existing is None:
-    #                    session.add(candidate)
-    #                else:
-    #                    existing.file_quantity = candidate.file_quantity
-    #                    existing.obs_quantity = candidate.obs_quantity
-    #
-    #                session.commit()
-    #        except Exception as error:
-    #            print(error)
-    #
-    #        return candidate
 
     def load_log_insert(self, args: dict[str, any]) -> PolarisLoadLog:
         candidate = PolarisLoadLog(args)
@@ -210,6 +185,71 @@ class PostGres:
                 select(PolarisVessel).filter_by(imo_code=imo_code)
             ).first()
 
+    def visit_insert(self, args: dict[str, any]) -> PolarisVisit:
+        candidate = PolarisVisit(args)
+
+        try:
+            with self.Session() as session:
+                session.add(candidate)
+                session.commit()
+        except Exception as error:
+            print(error)
+
+        return candidate
+
+    def visit_select_for_duplicate(self, imo_code: str, arrival_date: datetime.date, departure_date: datetime.date) -> list[PolarisVisit]:
+        #print(f"visit_select_for_duplicate: IMO {imo_code}, arrival {arrival_date}, departure {departure_date}")
+
+        try:
+            with self.Session() as session:
+                return session.scalars(
+                    select(PolarisVisit).filter(
+                        PolarisVisit.imo_code == imo_code,
+                        PolarisVisit.date_arrival == arrival_date.date(),
+                        PolarisVisit.date_departure == departure_date.date()
+                    )
+                ).all()
+        except Exception as error:
+            print(f"Error in visit_select_for_duplicate: {error}")
+            return []
+
+    def visit_select_for_imo(self, imo_code: str) -> list[PolarisVisit]:
+        try:
+            with self.Session() as session:
+                return session.scalars(
+                    select(PolarisVisit).filter(
+                        PolarisVisit.imo_code == imo_code
+                    )
+                ).all().order_by(PolarisVisit.date_arrival)
+        except Exception as error:
+            print(f"Error in visit_select_for_imo: {error}")
+            return []
+
+    def visit_update_departure(self, args: dict[str, any]) -> None:
+        try:
+            with self.Session() as session:
+                visit = session.scalars(
+                    select(PolarisVisit).filter_by(imo_code=args["imo_code"], active_flag=True)
+                ).first()
+
+                if visit:
+                    visit.date_departure = args['date_departure']
+                    visit.duration_days = args['duration_days']
+                    visit.in_port = False
+                    visit.locode_destination = args['locode_destination']
+                    visit.active_flag = False
+                    session.commit()
+                    print(f"Updated departure for IMO {args['imo_code']}")
+                else:
+                    print(f"No active visit found for IMO {args['imo_code']} to update departure.")
+        except Exception as error:
+            print(f"Error updating departure: {error}")
+
+    def visit_select_by_imo_and_active(self, imo_code: str) -> list[PolarisVisit]:
+        with self.Session() as session:
+            return session.scalars(
+                select(PolarisVisit).filter_by(imo_code=imo_code, active_flag=True)
+            ).all()
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***

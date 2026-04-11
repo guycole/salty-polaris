@@ -1,0 +1,25 @@
+--
+-- Title: polaris_visit.psql
+-- Description: port visit summary
+--
+-- date_arrival at locode_current 
+-- date_departure from locode_current
+-- imo_code for vessel
+-- in_port is true if vessel currently in locode_current
+-- locode_destination is next port
+-- locode_last is previous port
+--
+create table polaris_visit (
+  id                  bigserial    primary key,
+  active_flag         boolean      not null,
+  date_arrival        date         not null,
+  date_departure      date         not null,
+  duration_days       integer      not null,
+  imo_code            varchar(24)  not null,
+  in_port             boolean      not null default false,
+  locode_destination  varchar(24)  not null,
+  locode_last         varchar(24)  not null
+);
+
+grant select, insert, update, delete on polaris_visit to polaris_client;
+grant usage, select on sequence polaris_visit_id_seq to polaris_client;
