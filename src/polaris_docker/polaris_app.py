@@ -218,7 +218,7 @@ class PolarisApp:
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
         ports_urls = self.get_port_urls()
-        ports_urls = ["https://www.vesselfinder.com/ports/USRCH001"]
+        ports_urls = ["https://www.vesselfinder.com/ports/USSAC001"]
         for port_url in ports_urls:
             logger.info(f"processing {port_url}")
 

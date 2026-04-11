@@ -55,3 +55,4 @@ insert into polaris_port(locode, name, scrape_flag, url) values('KRMAS', 'Masan'
 insert into polaris_port(locode, name, scrape_flag, url) values('KRUSN', 'Ulsan',         false, 'https://www.vesselfinder.com/ports/KRUSN001');
 insert into polaris_port(locode, name, scrape_flag, url) values('USFDT', 'Ferndale',      false, 'https://www.vesselfinder.com/ports/USFDT001');
 insert into polaris_port(locode, name, scrape_flag, url) values('CAPMA', 'Port McNeill',  false, 'https://www.vesselfinder.com/ports/CAPMA001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USNTD', 'Port Hueneme',  false, 'https://www.vesselfinder.com/ports/USNTD001');

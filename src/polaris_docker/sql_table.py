@@ -47,27 +47,24 @@ class PolarisLoadLog(Base):
     def __repr__(self):
         return f"load_log({self.file_name} {self.file_time} {self.host_name})"
 
-
 class PolarisObservation(Base):
     __tablename__ = "polaris_observation"
 
     id = Column(Integer, primary_key=True)
+    date_arrival = Column(Date)
+    date_departure = Column(Date)
     imo_code = Column(String)
-    obs_time = Column(DateTime)
-    locode = Column(String)
-    arrival = Column(DateTime)
-    departure = Column(DateTime)
     in_port = Column(Boolean)
+    locode = Column(String)
+    obs_time = Column(DateTime)
 
     def __init__(self, args: dict[str, any]):
+        self.date_arrival = args["date_arrival"]
+        self.date_departure = args["date_departure"]
         self.imo_code = args["imo_code"]
-        self.imo_code = args["imo_code"]
-        self.obs_time = args["obs_time"]
-        self.locode = args["locode"]
-        self.arrival = args["arrival"]
-        self.departure = args["departure"]
         self.in_port = args["in_port"]
-
+        self.locode = args["locode"]
+        self.obs_time = args["obs_time"]
 
 class PolarisPort(Base):
     __tablename__ = "polaris_port"
@@ -131,7 +128,6 @@ class PolarisVisit(Base):
     duration_days = Column(Integer)
     imo_code = Column(String)
     in_port = Column(Boolean)
-    locode_current = Column(String)
     locode_destination = Column(String)
     locode_last = Column(String)
 
@@ -142,7 +138,6 @@ class PolarisVisit(Base):
         self.duration_days = args["duration_days"]
         self.imo_code = args["imo_code"]
         self.in_port = args["in_port"]
-        self.locode_current = args["locode_current"]
         self.locode_destination = args["locode_destination"]
         self.locode_last = args["locode_last"]
 

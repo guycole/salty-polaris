@@ -203,6 +203,7 @@ class PostGres:
                 visit = session.scalars(
                     select(PolarisVisit).filter_by(imo_code=args["imo_code"], active_flag=True)
                 ).first()
+                
                 if visit:
                     visit.date_departure = args['date_departure']
                     visit.duration_days = args['duration_days']

@@ -6,7 +6,6 @@
 -- date_departure from locode_current
 -- imo_code for vessel
 -- in_port is true if vessel currently in locode_current
--- locode_current is current port
 -- locode_destination is next port
 -- locode_last is previous port
 --
@@ -18,7 +17,6 @@ create table polaris_visit (
   duration_days       integer      not null,
   imo_code            varchar(24)  not null,
   in_port             boolean      not null default false,
-  locode_current      varchar(24)  not null,
   locode_destination  varchar(24)  not null,
   locode_last         varchar(24)  not null
 );

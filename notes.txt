@@ -19,3 +19,15 @@ if gross_ton > 10000 and in port flag false
   check polaris_visit
     if row not exist, then ship not yet arrived
     if row does exist, then ship has departed
+
+xxxxxxx
+
+if gross_ton < 400? skip
+
+if arrival date in future?  skip
+
+if visit row exists?
+  yes
+  no
+    is inport?  arrive
+

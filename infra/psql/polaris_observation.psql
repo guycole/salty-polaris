@@ -2,21 +2,21 @@
 -- Title: polaris_observation.psql
 -- Description: polaris vessel observations
 --
--- imo_code is ship 
--- locode is port
--- arrival is arrival time
--- departure is departure time
--- obs_time is collection time
+-- date_arrival at locode 
+-- date_departure from locode
+-- imo_code for vessel
 -- in_port flag
+-- locode is port
+-- obs_time is report timestamp
 --
 create table polaris_observation (
-  id         bigserial    primary key,
-  arrival    timestamp    not null,
-  departure  timestamp    not null,
-  imo_code   varchar(24)  not null,
-  in_port    boolean      not null default false,
-  locode     varchar(8)   not null,
-  obs_time   timestamp    not null
+  id              bigserial    primary key,
+  date_arrival    date         not null,
+  date_departure  date         not null,
+  imo_code        varchar(24)  not null,
+  in_port         boolean      not null,
+  locode          varchar(24)  not null,
+  obs_time        timestamp    not null
 );
 
 grant select, insert, update, delete on polaris_observation to polaris_client;

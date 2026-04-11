@@ -42,4 +42,4 @@ create table polaris_vessel (
 grant select, insert, update, delete on polaris_vessel to polaris_client;
 grant usage, select on sequence polaris_vessel_id_seq to polaris_client;
 
-insert into polaris_vessel(ais_type, beam, built_year, callsign, gross_ton, imo_code, length, mmsi_code, url, vessel_flag, vessel_name, vessel_type) values('Passenger ship', 22, 1989, 'WDL2000', 12517, '8834407', 152, '367978000', 'https://www.vesselfinder.com/vessels/8834407', 'United States (USA)', 'GOLDEN BEAR', 'Training Ship');
+insert into polaris_vessel(ais_type, beam, built_year, callsign, gross_ton, imo_code, length, mmsi_code, url, vessel_flag, vessel_name, vessel_type) values('Passenger ship', 22, 1989, 'WDL2000', 12517, '8834407', 152, '367978000', 'https://www.vesselfinder.com/vessels/details/8834407', 'United States (USA)', 'GOLDEN BEAR', 'Training Ship');
