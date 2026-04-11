@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 import yaml
 from yaml.loader import SafeLoader
 
+
 @dataclass
 class VesselObservation:
     name: str
@@ -72,6 +73,7 @@ class VesselObservation:
             "lastLoCode": self.last_locode,
             "departureDate": self.departure_date,
         }
+
 
 class VesselParser:
 
@@ -217,11 +219,15 @@ class VesselParser:
             if last_port_div := soup.find("div", class_="vilabel", string="Last Port"):
                 atd_div = last_port_div.find_next("div", class_="_value")
                 if atd_div:
-                    arrival_date = extract_labeled_date(atd_div.get_text(" ", strip=True), "ATA:")
+                    arrival_date = extract_labeled_date(
+                        atd_div.get_text(" ", strip=True), "ATA:"
+                    )
             if arrival_date is None:
                 ata_span = soup.find("span", class_="_mcol12")
                 if ata_span:
-                    arrival_date = extract_labeled_date(ata_span.get_text(" ", strip=True), "ATA:")
+                    arrival_date = extract_labeled_date(
+                        ata_span.get_text(" ", strip=True), "ATA:"
+                    )
 
         # Last port and last port code (from "Last Port" in Voyage Data)
         last_port, last_locode = None, None
@@ -306,6 +312,7 @@ class VesselScraper:
 
         return response.text
 
+
 class VesselDriver:
     def __init__(self, fresh_dir: str):
         self.fresh_dir = fresh_dir
@@ -342,8 +349,16 @@ class VesselDriver:
             "observation": obs.to_dict(),
         }
 
-        payload["observation"]["arrivalDate"] = PolarisUtility.port_datetime(obs.arrival_date).isoformat() if obs.arrival_date else None
-        payload["observation"]["departureDate"] = PolarisUtility.port_datetime(obs.departure_date).isoformat() if obs.departure_date else None
+        payload["observation"]["arrivalDate"] = (
+            PolarisUtility.port_datetime(obs.arrival_date).isoformat()
+            if obs.arrival_date
+            else None
+        )
+        payload["observation"]["departureDate"] = (
+            PolarisUtility.port_datetime(obs.departure_date).isoformat()
+            if obs.departure_date
+            else None
+        )
 
         return payload
 
@@ -383,6 +398,7 @@ class VesselDriver:
 
         return obs_dict
 
+
 #
 # vessels development
 # argv[1] = configuration filename
@@ -400,11 +416,13 @@ if __name__ == "__main__":
             #            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
 
             # tanker PEGASUS VOYAGER
-            driver.execute("net", "https://www.vesselfinder.com/vessels/details/9665736")
-            #driver.execute("test", "../../sample/fa17379f-e3bd-4540-9fb6-59bfadcc5372.html")
+            driver.execute(
+                "net", "https://www.vesselfinder.com/vessels/details/9665736"
+            )
+            # driver.execute("test", "../../sample/fa17379f-e3bd-4540-9fb6-59bfadcc5372.html")
 
             # tanker CHANTAL
-            #driver.execute("net", "https://www.vesselfinder.com/vessels/details/9382982")
+            # driver.execute("net", "https://www.vesselfinder.com/vessels/details/9382982")
 
             # bulker JADE WEALTH
             # driver.execute("test", "../../sample/ddf84d24-ac17-49d2-acf5-d1133fad3be7.html")

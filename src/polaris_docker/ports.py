@@ -1,5 +1,5 @@
 """
-port pages scraper, given a URL or a file, 
+port pages scraper, given a URL or a file,
 extract port information (from HTML) and return a JSON summary
 """
 
@@ -24,6 +24,7 @@ from bs4 import BeautifulSoup
 
 from dataclasses import dataclass, field
 from urllib.parse import urljoin
+
 
 @dataclass
 class VesselRecord:
@@ -61,6 +62,7 @@ class VesselRecord:
             "inPort": self.in_port,
         }
 
+
 class PortParser:
     def __init__(self):
         self.base_url = "https://www.vesselfinder.com"
@@ -95,7 +97,7 @@ class PortParser:
 
     def parse(self, html):
         # returns list of VesselRecord objects
-        
+
         soup = BeautifulSoup(html, "lxml")
 
         # Extract canonical URL for the port
@@ -192,6 +194,7 @@ class PortParser:
                 imo = ""
                 if vessel_link and vessel_link.has_attr("href"):
                     import re
+
                     m = re.search(r"/vessels/details/(\d+)", vessel_link["href"])
                     if m:
                         imo = m.group(1)
@@ -277,6 +280,7 @@ class PortScraper:
 
         return response.text
 
+
 class PortDriver:
     def __init__(self, fresh_dir: str):
         self.fresh_dir = fresh_dir
@@ -286,7 +290,9 @@ class PortDriver:
         self.html_file_name = f"{base_file_name}.html"
         self.json_file_name = f"{base_file_name}.json"
 
-    def json_payload(self, arg: str, stunt:str, vessel_list: list[VesselRecord]) -> dict[str, any]:
+    def json_payload(
+        self, arg: str, stunt: str, vessel_list: list[VesselRecord]
+    ) -> dict[str, any]:
         payload = {
             "application": "polaris-ports-v1",
             "fileName": self.json_file_name,
@@ -341,9 +347,9 @@ class PortDriver:
             print(f"test stunt: {arg}")
             raw_html = self.html_reader(arg)
             vessel_list = parser.parse(raw_html)
-#            for vessel in vessel_list:
-#                print(vessel.to_dict())
-#            print(f"total vessels parsed: {len(vessel_list)}")
+            #            for vessel in vessel_list:
+            #                print(vessel.to_dict())
+            #            print(f"total vessels parsed: {len(vessel_list)}")
             port_dict = self.json_payload(arg, stunt, vessel_list)
             print(port_dict)
         else:
@@ -351,6 +357,7 @@ class PortDriver:
 
         # print(f"parse results: {len(port_dict['vessels'])} vessels found")
         return port_dict
+
 
 #
 # ports development
@@ -367,7 +374,7 @@ if __name__ == "__main__":
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = PortDriver(configuration["freshDir"])
             # USRCH
-#            driver.execute("test", "../../sample/fe87d094-490a-4dd6-b881-5e70a97dc488.html")
+            #            driver.execute("test", "../../sample/fe87d094-490a-4dd6-b881-5e70a97dc488.html")
             driver.execute("net", "https://www.vesselfinder.com/ports/USBNC001")
         except yaml.YAMLError as error:
             print(error)

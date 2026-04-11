@@ -7,7 +7,7 @@ create table polaris_port (
   locode       varchar(8)   unique not null,
   name         varchar(64)  unique not null,
   scrape_flag  boolean      not null default false,
-  url          varchar(64)  not null
+  url          varchar(64)  unique not null
 );
 
 grant select, insert, update, delete on polaris_port to polaris_client;
@@ -33,6 +33,8 @@ insert into polaris_port(locode, name, scrape_flag, url) values('USFOB', 'Fort B
 insert into polaris_port(locode, name, scrape_flag, url) values('USEKA', 'Eureka',        true, 'https://www.vesselfinder.com/ports/USEKA001');
 insert into polaris_port(locode, name, scrape_flag, url) values('USCEC', 'Crescent City', true, 'https://www.vesselfinder.com/ports/USCEC001');
 insert into polaris_port(locode, name, scrape_flag, url) values('USVLO', 'Vallejo',       true, 'https://www.vesselfinder.com/ports/USVLO001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USPSL', 'Port San Luis', true, 'https://www.vesselfinder.com/ports/USPSL001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USNTD', 'Port Hueneme',  true, 'https://www.vesselfinder.com/ports/USNTD001');
 
 insert into polaris_port(locode, name, scrape_flag, url) values('USPDX', 'Portland',         false, 'https://www.vesselfinder.com/ports/USPDX002');
 insert into polaris_port(locode, name, scrape_flag, url) values('USVAN', 'Vancouver',        false, 'https://www.vesselfinder.com/ports/USVAN001');
@@ -55,7 +57,6 @@ insert into polaris_port(locode, name, scrape_flag, url) values('KRMAS', 'Masan'
 insert into polaris_port(locode, name, scrape_flag, url) values('KRUSN', 'Ulsan',            false, 'https://www.vesselfinder.com/ports/KRUSN001');
 insert into polaris_port(locode, name, scrape_flag, url) values('USFDT', 'Ferndale',         false, 'https://www.vesselfinder.com/ports/USFDT001');
 insert into polaris_port(locode, name, scrape_flag, url) values('CAPMA', 'Port McNeill',     false, 'https://www.vesselfinder.com/ports/CAPMA001');
-insert into polaris_port(locode, name, scrape_flag, url) values('USNTD', 'Port Hueneme',     false, 'https://www.vesselfinder.com/ports/USNTD001');
 insert into polaris_port(locode, name, scrape_flag, url) values('CAVAN', 'Vancouver',        false, 'https://www.vesselfinder.com/ports/CAVAN001');
 insert into polaris_port(locode, name, scrape_flag, url) values('CAVAC', 'North Vancouver',  false, 'https://www.vesselfinder.com/ports/CAVAC001');
 insert into polaris_port(locode, name, scrape_flag, url) values('JPSGM', 'Sendai',           false, 'https://www.vesselfinder.com/ports/JPSGM001');
@@ -64,3 +65,10 @@ insert into polaris_port(locode, name, scrape_flag, url) values('USKAM', 'Kalama
 insert into polaris_port(locode, name, scrape_flag, url) values('KRMAS', 'Masan',            false, 'https://www.vesselfinder.com/ports/KRMAS001');
 insert into polaris_port(locode, name, scrape_flag, url) values('KRPUS', 'Busan',            false, 'https://www.vesselfinder.com/ports/KRBNP001');
 insert into polaris_port(locode, name, scrape_flag, url) values('JPYOK', 'Yokohama',         false, 'https://www.vesselfinder.com/ports/JPYOK001');
+insert into polaris_port(locode, name, scrape_flag, url) values('GTPRQ', 'Puerto Quetzal',   false, 'https://www.vesselfinder.com/ports/GTPRQ001');
+insert into polaris_port(locode, name, scrape_flag, url) values('MXLZC', 'Lazaro Cardenas',  false, 'https://www.vesselfinder.com/ports/MXLZC001');
+insert into polaris_port(locode, name, scrape_flag, url) values('ECGYE', 'Guayaquil',        false, 'https://www.vesselfinder.com/ports/ECGYE001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USLGB', 'Long Beach',       false, 'https://www.vesselfinder.com/ports/USLGB001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USELS', 'El Segundo',       false, 'https://www.vesselfinder.com/ports/USELS002');
+insert into polaris_port(locode, name, scrape_flag, url) values('PAAML', 'Puerto Armuelles', false, 'https://www.vesselfinder.com/ports/PAAML001');
+insert into polaris_port(locode, name, scrape_flag, url) values('JPTHS', 'Toyohashi',        false, 'https://www.vesselfinder.com/ports/JPTHS001');

@@ -23,8 +23,9 @@ from sql_table import (
     PolarisObservation,
     PolarisPort,
     PolarisVessel,
-    PolarisVisit
+    PolarisVisit,
 )
+
 
 class PostGres:
     db_engine = None
@@ -76,6 +77,12 @@ class PostGres:
             print(error)
 
         return candidate
+
+    def port_select_by_locode(self, locode: str) -> PolarisPort:
+        with self.Session() as session:
+            return session.scalars(
+                select(PolarisPort).filter_by(locode=locode)
+            ).first()
 
     def port_select_for_scrape(self) -> list[str]:
         """
@@ -197,8 +204,10 @@ class PostGres:
 
         return candidate
 
-    def visit_select_for_duplicate(self, imo_code: str, arrival_date: datetime.date, departure_date: datetime.date) -> list[PolarisVisit]:
-        #print(f"visit_select_for_duplicate: IMO {imo_code}, arrival {arrival_date}, departure {departure_date}")
+    def visit_select_for_duplicate(
+        self, imo_code: str, arrival_date: datetime.date, departure_date: datetime.date
+    ) -> list[PolarisVisit]:
+        # print(f"visit_select_for_duplicate: IMO {imo_code}, arrival {arrival_date}, departure {departure_date}")
 
         try:
             with self.Session() as session:
@@ -206,7 +215,7 @@ class PostGres:
                     select(PolarisVisit).filter(
                         PolarisVisit.imo_code == imo_code,
                         PolarisVisit.date_arrival == arrival_date.date(),
-                        PolarisVisit.date_departure == departure_date.date()
+                        PolarisVisit.date_departure == departure_date.date(),
                     )
                 ).all()
         except Exception as error:
@@ -216,11 +225,13 @@ class PostGres:
     def visit_select_for_imo(self, imo_code: str) -> list[PolarisVisit]:
         try:
             with self.Session() as session:
-                return session.scalars(
-                    select(PolarisVisit).filter(
-                        PolarisVisit.imo_code == imo_code
+                return (
+                    session.scalars(
+                        select(PolarisVisit).filter(PolarisVisit.imo_code == imo_code)
                     )
-                ).all().order_by(PolarisVisit.date_arrival)
+                    .all()
+                    .order_by(PolarisVisit.date_arrival)
+                )
         except Exception as error:
             print(f"Error in visit_select_for_imo: {error}")
             return []
@@ -229,27 +240,36 @@ class PostGres:
         try:
             with self.Session() as session:
                 visit = session.scalars(
-                    select(PolarisVisit).filter_by(imo_code=args["imo_code"], active_flag=True)
+                    select(PolarisVisit).filter_by(
+                        imo_code=args["imo_code"], active_flag=True
+                    )
                 ).first()
 
                 if visit:
-                    visit.date_departure = args['date_departure']
-                    visit.duration_days = args['duration_days']
+                    visit.date_departure = args["date_departure"]
+                    visit.duration_days = args["duration_days"]
                     visit.in_port = False
-                    visit.locode_destination = args['locode_destination']
+                    visit.locode_destination = args["locode_destination"]
                     visit.active_flag = False
                     session.commit()
                     print(f"Updated departure for IMO {args['imo_code']}")
                 else:
-                    print(f"No active visit found for IMO {args['imo_code']} to update departure.")
+                    print(
+                        f"No active visit found for IMO {args['imo_code']} to update departure."
+                    )
         except Exception as error:
             print(f"Error updating departure: {error}")
+
+    def visit_select_all(self) -> list[PolarisVisit]:
+        with self.Session() as session:
+            return session.scalars(select(PolarisVisit)).all()
 
     def visit_select_by_imo_and_active(self, imo_code: str) -> list[PolarisVisit]:
         with self.Session() as session:
             return session.scalars(
                 select(PolarisVisit).filter_by(imo_code=imo_code, active_flag=True)
             ).all()
+
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***
