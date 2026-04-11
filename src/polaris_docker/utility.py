@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+
 class PolarisUtility:
 
     @staticmethod
@@ -53,6 +54,7 @@ class PolarisUtility:
         except Exception as e:
             logging.warning(f"Could not parse port datetime from '{arg}': {e}")
             return default_dt
+
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***

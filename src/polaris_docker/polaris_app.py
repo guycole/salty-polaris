@@ -25,10 +25,11 @@ from yaml.loader import SafeLoader
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("polaris")
 
+
 class PolarisApp:
 
     def __init__(self, configuration: dict[str, any]):
-        self.stunt_box = configuration['stunt_box']
+        self.stunt_box = configuration["stunt_box"]
 
         self.failure_dir = "/var/polaris/failure"
         self.fresh_dir = "/var/polaris/fresh"
@@ -36,8 +37,8 @@ class PolarisApp:
 
         self.failure = 0
         self.success = 0
-        
-        self.db_conn = configuration['dbConn']
+
+        self.db_conn = configuration["dbConn"]
         db_engine = create_engine(self.db_conn, echo=False)
         self.postgres = PostGres(sessionmaker(bind=db_engine, expire_on_commit=False))
 
@@ -108,7 +109,9 @@ class PolarisApp:
 
     def port_v1(self, file_flag: bool, json_dict: dict[str, any]) -> None:
         # process port scrape
-        logger.info(f"port v1: {json_dict['loCode']} {len(json_dict['vessels'])} vessels")
+        logger.info(
+            f"port v1: {json_dict['loCode']} {len(json_dict['vessels'])} vessels"
+        )
 
         vessel_request = {}
 
@@ -131,7 +134,7 @@ class PolarisApp:
                 driver = VesselDriver(self.fresh_dir)
                 vessel_dict = driver.execute("net", vessel_request[key])
                 self.vessel_v1_insert(vessel_dict)
-  
+
         self.port_load_log_insert(json_dict)
 
     def vessel_v1_insert(self, vessel_dict: dict[str, any]) -> None:
@@ -208,9 +211,9 @@ class PolarisApp:
 
                     self.port_v1(True, json_dict)
 
-# skipping port files
-#                    visit_driver = VisitDriver(self.fresh_dir, self.postgres.Session)
-#                    visit_driver.visit_v1(json_dict)
+                    # skipping port files
+                    #                    visit_driver = VisitDriver(self.fresh_dir, self.postgres.Session)
+                    #                    visit_driver.visit_v1(json_dict)
 
                     self.file_success(target)
                 except Exception as error:
@@ -223,7 +226,7 @@ class PolarisApp:
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
         ports_urls = self.get_port_urls()
-        #ports_urls = ["https://www.vesselfinder.com/ports/USSCK001"]
+        # ports_urls = ["https://www.vesselfinder.com/ports/USSCK001"]
         for port_url in ports_urls:
             logger.info(f"processing {port_url}")
 
@@ -243,9 +246,10 @@ class PolarisApp:
             logger.info(f"stunt box: net")
             self.net_driver()
 
+
 if __name__ == "__main__":
     configuration = {}
-    
+
     file_name = "config.yaml"
 
     with open(file_name, "r") as in_file:
@@ -255,8 +259,8 @@ if __name__ == "__main__":
             print(error)
 
     # stunt_box options: "file" and "net"
-    configuration['stunt_box'] = os.environ.get("stuntbox", "net")
-#    configuration['stunt_box'] = os.environ.get("stuntbox", "file")
+    configuration["stunt_box"] = os.environ.get("stuntbox", "net")
+    #    configuration['stunt_box'] = os.environ.get("stuntbox", "file")
 
     app = PolarisApp(configuration)
     app.execute()

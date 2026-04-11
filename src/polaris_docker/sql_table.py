@@ -47,6 +47,7 @@ class PolarisLoadLog(Base):
     def __repr__(self):
         return f"load_log({self.file_name} {self.file_time} {self.host_name})"
 
+
 class PolarisObservation(Base):
     __tablename__ = "polaris_observation"
 
@@ -65,6 +66,7 @@ class PolarisObservation(Base):
         self.in_port = args["in_port"]
         self.locode = args["locode"]
         self.obs_time = args["obs_time"]
+
 
 class PolarisPort(Base):
     __tablename__ = "polaris_port"
@@ -118,6 +120,7 @@ class PolarisVessel(Base):
     def __repr__(self):
         return f"PolarisVessel({self.vessel_name} {self.imo_code} {self.vessel_type})"
 
+
 class PolarisVisit(Base):
     __tablename__ = "polaris_visit"
 
@@ -142,7 +145,10 @@ class PolarisVisit(Base):
         self.locode_last = args["locode_last"]
 
     def __repr__(self):
-        return f"PolarisVisit({self.imo_code} {self.date_arrival} {self.date_departure})"
+        return (
+            f"PolarisVisit({self.imo_code} {self.date_arrival} {self.date_departure})"
+        )
+
 
 # ;;; Local Variables: ***
 # ;;; mode:python ***
