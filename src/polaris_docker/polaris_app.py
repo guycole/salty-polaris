@@ -8,7 +8,6 @@ import datetime
 import json
 import logging
 import os
-import sys
 
 from utility import PolarisUtility
 from ports import PortDriver, PortParser
@@ -202,8 +201,14 @@ class PolarisApp:
 
             if json_dict["application"] == "polaris-ports-v1":
                 try:
+                    selected = self.postgres.load_log_select_by_file_name(target)
+                    if selected is not None:
+                        self.file_failure(target)
+                        continue
+
                     self.port_v1(True, json_dict)
 
+# skipping port files
 #                    visit_driver = VisitDriver(self.fresh_dir, self.postgres.Session)
 #                    visit_driver.visit_v1(json_dict)
 
@@ -218,7 +223,7 @@ class PolarisApp:
     def net_driver(self) -> None:
         # read port urls from database and scrape each one
         ports_urls = self.get_port_urls()
-        ports_urls = ["https://www.vesselfinder.com/ports/USSAC001"]
+        #ports_urls = ["https://www.vesselfinder.com/ports/USSCK001"]
         for port_url in ports_urls:
             logger.info(f"processing {port_url}")
 

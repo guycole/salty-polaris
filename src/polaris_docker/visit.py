@@ -1,13 +1,6 @@
 import datetime
-import json
 import logging
-import os
-import random
-import requests
-import socket
 import sys
-import time
-import uuid
 
 from postgres import PostGres
 from vessels import VesselDriver
@@ -42,7 +35,7 @@ class VisitDriver:
 
         self.default_date = datetime.datetime(1970, 1, 1)
 
-    def arrival(self, vessel_dict: dict[str, any]) -> None:
+    def visit_insert(self, vessel_dict: dict[str, any]) -> None:
         print(f"visit insert for {vessel_dict['name']} ({vessel_dict['arrival_date']})")
 
         vessel_driver = VesselDriver(self.fresh_dir)
@@ -50,37 +43,69 @@ class VisitDriver:
         print(detail_dict)
 
         args = {
-            "date_arrival": detail_dict["observation"]["arrivalDate"],
-            "date_departure": detail_dict["observation"]["departureDate"],
+            "active_flag": True,
+            "date_arrival": vessel_dict["arrival_date"],
+            "date_departure": vessel_dict["departure_date"],
             "duration_days": 0,
-            "imo_code": detail_dict["imoCode"],
+            "imo_code": vessel_dict["imo_code"],
             "in_port": vessel_dict["in_port"],
             "locode_destination": detail_dict["observation"].get("destinationLoCode", "XXXXX"),
             "locode_last": detail_dict["observation"]["lastLoCode"],
         }
 
-        print(args)
+        if args["date_departure"] != self.default_date:
+            args["active_flag"] = False
+            args["duration_days"] = (args["date_departure"] - args["date_arrival"]).days
+
+        if args["duration_days"] < 0:
+            args["duration_days"] = 0
+
+        if args["locode_last"] is None or args["locode_last"] == "":
+            args["locode_last"] = "XXXXX"
+
+        if args["locode_destination"] is None or args["locode_destination"] == "":
+            args["locode_destination"] = "XXXXX"
 
         self.postgres.visit_insert(args)
 
-    def departure(self, duration_days: int, vessel_dict: dict[str, any]) -> None:
-        # Update the visit record for vessel departure
-        print(f"visit departure for {vessel_dict['name']} ({vessel_dict['imo_code']}) {duration_days} days")
-
-        print(vessel_dict)
+    def visit_update(self, vessel_dict: dict[str, any]) -> None:
+        print(f"visit update for {vessel_dict['name']} ({vessel_dict['imo_code']})")
 
         vessel_driver = VesselDriver(self.fresh_dir)
         detail_dict = vessel_driver.execute("net", vessel_dict["vessel_url"])
         print(detail_dict)
 
         args = {
-            "date_departure": detail_dict["observation"]["departureDate"],
-            "duration_days": duration_days,
-            "imo_code": detail_dict["imoCode"],
+            "active_flag": False,
+            "date_departure": vessel_dict["departure_date"],
+            "duration_days": (vessel_dict["departure_date"] - vessel_dict["arrival_date"]).days,
+            "imo_code": vessel_dict["imo_code"],
             "locode_destination": detail_dict["observation"].get("destinationLoCode", "XXXXX"),
         }
 
+        if args["duration_days"] < 0:
+            args["duration_days"] = 0
+
+        if args["locode_destination"] is None or args["locode_destination"] == "":
+            args["locode_destination"] = "XXXXX"
+
         self.postgres.visit_update_departure(args)
+
+    def visit_cooker(self, vessel_dict: dict[str, any]) -> None:
+        print(f"visit cooker {vessel_dict['name']} ({vessel_dict['imo_code']})")
+
+        # update existing or insert fresh?
+        selected = self.postgres.visit_select_by_imo_and_active(vessel_dict["imo_code"])
+        print(f"visit cooker selected: {len(selected)} records")
+
+        if len(selected) < 1:
+            print("visit cooker no active visit")
+            self.visit_insert(vessel_dict)
+        elif vessel_dict["departure_date"] == self.default_date:
+            print("visit cooker active visit with no departure date")
+        else:
+            print("visit cooker update visit with departure date")
+            self.visit_update(vessel_dict)
 
     def observation_insert(self, lo_code: str, obs_date: datetime.datetime, vessel: dict[str, any]) -> None:
         # print(f"Observation insert for {vessel['name']} ({vessel['imo_code']}) at {obs_date} in port {lo_code}")
@@ -98,7 +123,7 @@ class VisitDriver:
 
     def deduplicate(self, json_dict: dict[str, any]) -> dict[str, any]:
         # the raw json_dict may have duplicate vessels because single page application
-        # it is scraped in the order "expected", "arrivals", "departures" and "in port"
+        # which is scraped in the order "expected", "arrivals", "departures" and "in port"
         # iterate through the vessels merge the dates
 
         results = {}
@@ -120,10 +145,10 @@ class VisitDriver:
                     "vessel_url": vessel["vesselUrl"]
                 }
             else:
-                existing = results[imo_code]
-                existing["arrival_date"] = max(existing["arrival_date"], arrival_date)
-                existing["departure_date"] = max(existing["departure_date"], departure_date)
-                existing["in_port"] = existing["in_port"] or in_port
+                current = results[imo_code]
+                current["arrival_date"] = max(current["arrival_date"], arrival_date)
+                current["departure_date"] = max(current["departure_date"], departure_date)
+                current["in_port"] = current["in_port"] or in_port
 
         return results
 
@@ -150,24 +175,37 @@ class VisitDriver:
                 print("skipping vessel with arrival date in the future")
                 continue
 
-            selected = self.postgres.visit_select_by_imo_and_active(vessel["imo_code"])
+            selected = self.postgres.visit_select_for_duplicate(vessel["imo_code"], vessel["arrival_date"], vessel["departure_date"])
             if len(selected) < 1:
-                print("no active visit")
-
-                if vessel['in_port']:
-                    print("in port true, creating visit")
-                    self.arrival(vessel)
-                elif vessel['arrival_date'] > self.default_date:
-                    print("arrival date exists, creating visit")
-                    self.arrival(vessel)
+                self.visit_cooker(vessel)
             elif len(selected) == 1:
-                print("one active visit")
-                if vessel['departure_date'] > self.default_date and vessel['departure_date'] < obs_date:
-                    print("departure date exists and in the past, updating visit")
-                    duration_days = (vessel['departure_date'] - vessel['arrival_date']).days
-                    self.departure(duration_days, vessel)
-            else:
-                print("multiple active visits")
+                print("skipping vessel with duplicate visit")
+            else :
+                print("ERROR: vessel with multiple duplicate visits")
+
+#            selected = self.postgres.visit_select_for_duplicate(vessel["imo_code"], vessel["arrival_date"], vessel["departure_date"])
+#        
+#           selected = self.postgres.visit_select_by_imo_and_active(vessel["imo_code"])
+#            if len(selected) < 1:
+#                print("no active visit")
+#
+#               if vessel['in_port']:
+#                    print("in port true, creating visit")
+#                    self.arrival(vessel)
+#                elif vessel['arrival_date'] > self.default_date:
+#                    print("arrival date exists, creating visit")
+#                    self.arrival(vessel)
+#            elif len(selected) == 1:
+#                print("one active visit")
+#                if vessel['departure_date'] > self.default_date and vessel['departure_date'] < obs_date:
+#                    print("departure date exists and in the past, updating visit")
+#                    print(f"DEBUG: arrival_date type: {type(vessel['arrival_date'])}, value: {repr(vessel['arrival_date'])}")
+#                    print(f"DEBUG: departure_date type: {type(vessel['departure_date'])}, value: {repr(vessel['departure_date'])}")
+#                    print(f"DEBUG: timedelta: {vessel['departure_date'] - vessel['arrival_date']}")
+#                    duration_days = (vessel['departure_date'] - vessel['arrival_date']).days
+#                    self.departure(duration_days, vessel)
+#            else:
+#                print("multiple active visits")
 
     def execute(self, stunt: str, arg: str) -> dict[str, any]:
         parser = PortParser()

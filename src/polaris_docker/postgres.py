@@ -9,6 +9,7 @@
 # from sqlalchemy import select
 
 import datetime
+from socket import error
 import time
 from sql_table import PolarisLoadLog, PolarisObservation, PolarisPort
 
@@ -185,7 +186,6 @@ class PostGres:
             ).first()
 
     def visit_insert(self, args: dict[str, any]) -> PolarisVisit:
-        args["active_flag"] = True
         candidate = PolarisVisit(args)
 
         try:
@@ -196,14 +196,42 @@ class PostGres:
             print(error)
 
         return candidate
-    
+
+    def visit_select_for_duplicate(self, imo_code: str, arrival_date: datetime.date, departure_date: datetime.date) -> list[PolarisVisit]:
+        #print(f"visit_select_for_duplicate: IMO {imo_code}, arrival {arrival_date}, departure {departure_date}")
+
+        try:
+            with self.Session() as session:
+                return session.scalars(
+                    select(PolarisVisit).filter(
+                        PolarisVisit.imo_code == imo_code,
+                        PolarisVisit.date_arrival == arrival_date.date(),
+                        PolarisVisit.date_departure == departure_date.date()
+                    )
+                ).all()
+        except Exception as error:
+            print(f"Error in visit_select_for_duplicate: {error}")
+            return []
+
+    def visit_select_for_imo(self, imo_code: str) -> list[PolarisVisit]:
+        try:
+            with self.Session() as session:
+                return session.scalars(
+                    select(PolarisVisit).filter(
+                        PolarisVisit.imo_code == imo_code
+                    )
+                ).all().order_by(PolarisVisit.date_arrival)
+        except Exception as error:
+            print(f"Error in visit_select_for_imo: {error}")
+            return []
+
     def visit_update_departure(self, args: dict[str, any]) -> None:
         try:
             with self.Session() as session:
                 visit = session.scalars(
                     select(PolarisVisit).filter_by(imo_code=args["imo_code"], active_flag=True)
                 ).first()
-                
+
                 if visit:
                     visit.date_departure = args['date_departure']
                     visit.duration_days = args['duration_days']
