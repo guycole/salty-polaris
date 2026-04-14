@@ -6,8 +6,6 @@
 -- beam is vessel width in meters
 -- built_year is vessel construction year
 -- callsign is vessel radio callsign
--- date_first is first observation date
--- date_recent is most recent observation date
 -- gross_ton is vessel gross tonnage
 -- hot_flag is true for vessels of interest
 -- imo_code is vessel IMO code
@@ -25,8 +23,6 @@ create table polaris_vessel (
   beam         integer       not null,
   built_year   integer       not null default 1900,
   callsign     varchar(24)   not null,
-  date_first   date          not null default CURRENT_DATE,
-  date_recent  date          not null default CURRENT_DATE,
   gross_ton    integer       not null,
   hot_flag     boolean       not null default false,
   imo_code     varchar(24)   unique not null,
