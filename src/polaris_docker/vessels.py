@@ -213,6 +213,9 @@ class VesselParser:
                 value_text = value_div.get_text(" ", strip=True)
                 arrival_date = extract_labeled_date(value_text, "ETA:")
 
+        if not destination_locode:
+            destination_locode = "PAXXX001"
+
         # Arrival date (from "ATA" in Voyage Data) -- only overwrite if not set from ETA
         if arrival_date is None:
             # Try ATA from the last-port value block first.
@@ -234,10 +237,15 @@ class VesselParser:
         last_port_div = soup.find("div", class_="vilabel", string="Last Port")
         if last_port_div:
             last_port_a = last_port_div.find_next("a")
-            if last_port_a:
+            if last_port_a and last_port_a.get("href", "").startswith("/ports/"):
                 last_port = last_port_a.get_text(strip=True)
-                if last_port_a.has_attr("href"):
-                    last_locode = last_port_a["href"].split("/")[-1]
+                last_locode = last_port_a["href"].split("/ports/")[-1]
+            else:
+                # No port link present — name is in the _3-Yih div, locode is unknown
+                name_div = last_port_div.find_next("div", class_="_3-Yih")
+                if name_div:
+                    last_port = name_div.get_text(strip=True)
+                last_locode = "PAXXX001"
 
         # Departure date (from "Last Port" and "ATA"/"ATD" in Voyage Data)
         departure_date = None
@@ -416,10 +424,12 @@ if __name__ == "__main__":
             #            driver.execute("file", "/var/polaris/fresh/e84acc3f-6bd3-423a-8f2b-0bd034bb868d.html")
 
             # tanker PEGASUS VOYAGER
-            driver.execute(
-                "net", "https://www.vesselfinder.com/vessels/details/9665736"
-            )
+            #driver.execute(
+            #    "net", "https://www.vesselfinder.com/vessels/details/9665736"
+            #)
             # driver.execute("test", "../../sample/fa17379f-e3bd-4540-9fb6-59bfadcc5372.html")
+
+            driver.execute("test", "../../sample/ed7e60f3-9f11-4f70-8259-6ec8e64526c9.html")
 
             # tanker CHANTAL
             # driver.execute("net", "https://www.vesselfinder.com/vessels/details/9382982")
