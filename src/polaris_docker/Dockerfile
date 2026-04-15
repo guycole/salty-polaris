@@ -24,6 +24,7 @@ COPY ports.py ./
 COPY vessels.py ./
 COPY postgres.py ./
 COPY sql_table.py ./
+COPY utility.py ./
 COPY vessels.py ./
 COPY visit.py ./
 

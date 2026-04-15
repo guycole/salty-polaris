@@ -206,4 +206,4 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-src/collection/config.yaml
+src/polaris_docker/config.yaml

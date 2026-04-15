@@ -31,9 +31,9 @@ class PolarisApp:
     def __init__(self, configuration: dict[str, any]):
         self.stunt_box = configuration["stunt_box"]
 
-        self.failure_dir = "/var/polaris/failure"
-        self.fresh_dir = "/var/polaris/fresh"
-        self.success_dir = "/var/polaris/success"
+        self.failure_dir = configuration["failureDir"]
+        self.fresh_dir = configuration["freshDir"]
+        self.success_dir = configuration["successDir"]
 
         self.failure = 0
         self.success = 0
