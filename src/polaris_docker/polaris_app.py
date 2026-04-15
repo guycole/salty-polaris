@@ -162,6 +162,9 @@ class PolarisApp:
 
             if args["built_year"] is None or args["built_year"] == "":
                 args["built_year"] = 1900
+            
+            if args["callsign"] is None or args["callsign"] == "":
+                args["callsign"] = "Unknown"
 
             if args["gross_ton"] is None or args["gross_ton"] == "":
                 args["gross_ton"] = 0
@@ -171,6 +174,9 @@ class PolarisApp:
 
             if args["mmsi_code"] is None or args["mmsi_code"] == "":
                 args["mmsi_code"] = "000000000"
+
+            if args["vessel_flag"] is None or args["vessel_flag"] == "":
+                args["vessel_flag"] = "Unknown"
 
             self.postgres.vessel_insert(args)
 
