@@ -54,7 +54,7 @@ if __name__ == "__main__":
         try:
             configuration = yaml.load(in_file, Loader=SafeLoader)
             driver = PortInsert(configuration)
-            driver.execute("fresh4")
+            driver.execute("f1")
         except yaml.YAMLError as error:
             print(error)
 

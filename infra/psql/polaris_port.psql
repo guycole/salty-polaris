@@ -308,4 +308,9 @@ insert into polaris_port(locode, name, scrape_flag, url) values('USPLQ', 'Plaque
 insert into polaris_port(locode, name, scrape_flag, url) values('USSSI', 'Brunswick', false, ' https://www.vesselfinder.com/ports/USSSI001');
 insert into polaris_port(locode, name, scrape_flag, url) values('VEAMY', 'Amuay', false, ' https://www.vesselfinder.com/ports/VEAMY001');
 
+insert into polaris_port(locode, name, scrape_flag, url) values('PECON', 'Conchan', false, ' https://www.vesselfinder.com/ports/PECON001');
+insert into polaris_port(locode, name, scrape_flag, url) values('ESTAR', 'Tarragona', false, ' https://www.vesselfinder.com/ports/ESTAR001');
+insert into polaris_port(locode, name, scrape_flag, url) values('HTCAP', 'Cap Haitien', false, ' https://www.vesselfinder.com/ports/HTCAP001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USESX', 'Eddystone', false, ' https://www.vesselfinder.com/ports/USESX001');
+insert into polaris_port(locode, name, scrape_flag, url) values('KRKAN', 'Gwangyang', false, ' https://www.vesselfinder.com/ports/KRKAN001');
 
