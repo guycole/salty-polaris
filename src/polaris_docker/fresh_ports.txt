@@ -1,0 +1,31 @@
+Hilo, https://www.vesselfinder.com/ports/USITO001
+Brisbane, https://www.vesselfinder.com/ports/AUBNE001
+Puerto Bolivar, https://www.vesselfinder.com/ports/COPBO001
+Rizhao, https://www.vesselfinder.com/ports/CNRZH001
+La Guaira, https://www.vesselfinder.com/ports/VELAG001
+San Juan De La Costa, https://www.vesselfinder.com/ports/MXSJC001
+Hitachinaka, https://www.vesselfinder.com/ports/JPHIC001
+Freeport, https://www.vesselfinder.com/ports/BSFPO001
+Mundra, https://www.vesselfinder.com/ports/INMUN001
+Eten, https://www.vesselfinder.com/ports/PEEEN001
+Philadelphia, https://www.vesselfinder.com/ports/USPHL001
+Valparaiso, https://www.vesselfinder.com/ports/CLVAP001
+Salaverry, https://www.vesselfinder.com/ports/PESVY001
+Matarani, https://www.vesselfinder.com/ports/PEMRI001
+Iquique, https://www.vesselfinder.com/ports/CLIQQ001
+Donghae, https://www.vesselfinder.com/ports/KRTGH001
+Punta Quilla, https://www.vesselfinder.com/ports/ARPQU002
+Chancay, https://www.vesselfinder.com/ports/PECHY001
+Punta Arenas, https://www.vesselfinder.com/ports/CLPUQ001
+Coronel, https://www.vesselfinder.com/ports/CLCNL001
+Santa Marta, https://www.vesselfinder.com/ports/COSMR001
+Montego Bay, https://www.vesselfinder.com/ports/JMMBJ001
+Geismar, https://www.vesselfinder.com/ports/USGSM001
+Taichung, https://www.vesselfinder.com/ports/TWTXG001
+Patillos, https://www.vesselfinder.com/ports/CLPTI001
+Pisco, https://www.vesselfinder.com/ports/PEPIO001
+Pozos Colorados, https://www.vesselfinder.com/ports/COPOC001
+Port Moody, https://www.vesselfinder.com/ports/CAPMO001
+Nagoya, https://www.vesselfinder.com/ports/JPNGO001
+Calbuco, https://www.vesselfinder.com/ports/CLCBC001
+
