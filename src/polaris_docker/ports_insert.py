@@ -32,8 +32,8 @@ class PortInsert:
         for row in buffer:
             if len(row) > 3:
                 tokens = row.split(",")
-                name = tokens[0].rstrip()
-                url = tokens[1].rstrip()
+                name = tokens[0].strip()
+                url = tokens[1].strip()
 
                 tokens = url.split("/")
                 locode = tokens[-1][:5]
