@@ -166,8 +166,13 @@ class PolarisApp:
             if args["callsign"] is None or args["callsign"] == "":
                 args["callsign"] = "Unknown"
 
-            if args["gross_ton"] is None or args["gross_ton"] == "":
-                args["gross_ton"] = 0
+            try:
+                if args["gross_ton"] is None or args["gross_ton"] == "":
+                    args["gross_ton"] = 0
+
+                args["gross_ton"] = int(args["gross_ton"])
+            except ValueError:
+                args["gross_ton"] = 0   
 
             if args["length"] is None or args["length"] == "":
                 args["length"] = 0
