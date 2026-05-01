@@ -306,14 +306,32 @@ class VesselScraper:
         self.timeout: int = 30
 
     def fetch(self, html_file_name: str, write_flag: bool) -> str:
-        logger.info("fetching %s", self.url)
-
         # imitate human browsing behavior with random sleep before request
-        time.sleep(random.uniform(5, 25))
+        duration = random.uniform(5, 25)
+        logger.info(f"sleeping for {duration:.2f} seconds before fetching {self.url}")
+        time.sleep(duration)
 
-        response = requests.get(self.url, headers=self.headers, timeout=self.timeout)
-        response.raise_for_status()
+        attempts = 0
+        for attempts in range(3):
+            try:
+                response = requests.get(
+                    self.url, headers=self.headers, timeout=self.timeout
+                )
+                response.raise_for_status()
+                break  # success, exit the retry loop
+            except requests.RequestException as error:
+                logger.error(
+                    f"attempt {attempts + 1} error fetching {self.url}: {error}"
+                )
 
+                if attempts < 2:
+                    backoff = 2 ** attempts
+                    logger.info(f"retrying in {backoff} seconds...")
+                    time.sleep(backoff)
+                else:
+                    logger.error(f"failed to fetch {self.url} after 3 attempts")
+                    return ""
+ 
         if write_flag:
             with open(f"{self.fresh_dir}/{html_file_name}", "w", encoding="utf-8") as f:
                 f.write(response.text)
