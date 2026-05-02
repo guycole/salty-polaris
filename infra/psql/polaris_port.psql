@@ -375,3 +375,11 @@ insert into polaris_port(locode, name, scrape_flag, url) values('ECMTV', 'Montev
 insert into polaris_port(locode, name, scrape_flag, url) values('GPPTP', 'Pointe A Pitre', false, 'https://www.vesselfinder.com/ports/GPPTP001');
 insert into polaris_port(locode, name, scrape_flag, url) values('SEGOT', 'Goteborg', false, 'https://www.vesselfinder.com/ports/SEGOT001');
 
+insert into polaris_port(locode, name, scrape_flag, url) values('AWBAR', 'Barcadera', false, 'https://www.vesselfinder.com/ports/AWBAR001');
+insert into polaris_port(locode, name, scrape_flag, url) values('CASOR', 'Sorel', false, 'https://www.vesselfinder.com/ports/CASOR001');
+insert into polaris_port(locode, name, scrape_flag, url) values('NAWVB', 'Walvis Bay', false, 'https://www.vesselfinder.com/ports/NAWVB001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USGLS', 'Galveston', false, 'https://www.vesselfinder.com/ports/USGLS001');
+insert into polaris_port(locode, name, scrape_flag, url) values('CNDJK', 'Dongjiakou', false, 'https://www.vesselfinder.com/ports/CNDJK001');
+insert into polaris_port(locode, name, scrape_flag, url) values('KRMOK', 'Mokpo', false, 'https://www.vesselfinder.com/ports/KRMOK001');
+insert into polaris_port(locode, name, scrape_flag, url) values('USORF', 'Norfolk', false, 'https://www.vesselfinder.com/ports/USORF001');
+
