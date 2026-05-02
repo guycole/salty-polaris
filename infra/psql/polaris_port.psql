@@ -383,3 +383,7 @@ insert into polaris_port(locode, name, scrape_flag, url) values('CNDJK', 'Dongji
 insert into polaris_port(locode, name, scrape_flag, url) values('KRMOK', 'Mokpo', false, 'https://www.vesselfinder.com/ports/KRMOK001');
 insert into polaris_port(locode, name, scrape_flag, url) values('USORF', 'Norfolk', false, 'https://www.vesselfinder.com/ports/USORF001');
 
+insert into polaris_port(locode, name, scrape_flag, url) values('MXSRL', 'Santa Rosalia', false, 'https://www.vesselfinder.com/ports/MXSRL001');
+insert into polaris_port(locode, name, scrape_flag, url) values('JPIWK', 'Iwakuni', false, 'https://www.vesselfinder.com/ports/JPIWK001');
+insert into polaris_port(locode, name, scrape_flag, url) values('CLPMC', 'Puerto Montt', false, 'https://www.vesselfinder.com/ports/CLPMC001');
+insert into polaris_port(locode, name, scrape_flag, url) values('CAPTE', 'Port Edward', false, 'https://www.vesselfinder.com/ports/CAPTE001');
